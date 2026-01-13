@@ -6,7 +6,7 @@ const Footer = () => (
   <footer className="border-t-2 border-black bg-black text-white pt-16 pb-8 px-8">
     <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
       
-      {/* COLUMN 1: BRAND */}
+      {/* COLUMN 1 */}
       <div>
         <h4 className="text-3xl font-black uppercase mb-6 flex items-center gap-2">
           <Shield className="text-blue-600"/> Sentinel
@@ -21,33 +21,33 @@ const Footer = () => (
         </div>
       </div>
       
-      {/* COLUMN 2: COMPANY */}
+      {/* COLUMN 2 */}
       <div>
         <h5 className="font-bold uppercase text-gray-500 mb-6 tracking-widest text-sm">Company</h5>
         <ul className="space-y-3 font-bold">
           <li><Link to="/about" className="hover:text-blue-500 hover:pl-2 transition-all">About Us</Link></li>
           <li><Link to="/services" className="hover:text-blue-500 hover:pl-2 transition-all">Our Services</Link></li>
-          <li><Link to="/careers" className="hover:text-blue-500 hover:pl-2 transition-all">Careers</Link></li>
-          <li><Link to="/resources" className="hover:text-blue-500 hover:pl-2 transition-all">Whitepapers</Link></li>
+          <li><Link to="/audit" className="hover:text-blue-500 hover:pl-2 transition-all">Audit Report</Link></li>
+          <li><Link to="/settings" className="hover:text-blue-500 hover:pl-2 transition-all">Settings</Link></li>
           <li><Link to="/faq" className="hover:text-blue-500 hover:pl-2 transition-all">FAQ</Link></li>
           <li><Link to="/contact" className="hover:text-blue-500 hover:pl-2 transition-all">Contact</Link></li>
         </ul>
       </div>
 
-      {/* COLUMN 3: TOOLS */}
+      {/* COLUMN 3 */}
       <div>
-        <h5 className="font-bold uppercase text-gray-500 mb-6 tracking-widest text-sm">Free Tools</h5>
+        <h5 className="font-bold uppercase text-gray-500 mb-6 tracking-widest text-sm">Forensics Tools</h5>
         <ul className="space-y-3 font-bold">
           <li><Link to="/dashboard" className="text-red-500 hover:text-white hover:pl-2 transition-all">Dashboard Portal</Link></li>
+          <li><Link to="/tools/file-encrypt" className="hover:text-blue-500 hover:pl-2 transition-all">AES File Vault</Link></li>
+          <li><Link to="/tools/webrtc-leak" className="hover:text-blue-500 hover:pl-2 transition-all">WebRTC Leak Check</Link></li>
           <li><Link to="/tools/phishing-check" className="hover:text-blue-500 hover:pl-2 transition-all">Phishing Detector</Link></li>
           <li><Link to="/tools/ip-lookup" className="hover:text-blue-500 hover:pl-2 transition-all">IP Lookup</Link></li>
           <li><Link to="/tools/password-gen" className="hover:text-blue-500 hover:pl-2 transition-all">Password Generator</Link></li>
-          <li><Link to="/tools/browser-check" className="hover:text-blue-500 hover:pl-2 transition-all">Browser Info</Link></li>
-          <li><Link to="/tools/speed-test" className="hover:text-blue-500 hover:pl-2 transition-all">Speed Test</Link></li>
         </ul>
       </div>
 
-      {/* COLUMN 4: LEGAL */}
+      {/* COLUMN 4 */}
       <div>
         <h5 className="font-bold uppercase text-gray-500 mb-6 tracking-widest text-sm">Legal</h5>
         <ul className="space-y-3 text-sm text-gray-400">

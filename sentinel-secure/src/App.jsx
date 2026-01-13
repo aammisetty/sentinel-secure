@@ -12,6 +12,8 @@ import Services from './pages/Services';
 import FAQ from './pages/FAQ';
 import Resources from './pages/Resources';
 import Careers from './pages/Careers';
+import Settings from './pages/Settings';       // NEW
+import AuditReport from './pages/AuditReport'; // NEW
 
 // Auth
 import Login from './pages/Auth/Login';
@@ -25,6 +27,8 @@ import SpeedTest from './pages/Tools/SpeedTest';
 import IncidentLog from './pages/Tools/IncidentLog';
 import IpLookup from './pages/Tools/IpLookup';
 import PhishingDetector from './pages/Tools/PhishingDetector';
+import FileEncrypt from './pages/Tools/FileEncrypt';  // NEW
+import WebRTCLeak from './pages/Tools/WebRTCLeak';    // NEW
 
 // Legal
 import Privacy from './pages/Legal/Privacy';
@@ -42,10 +46,11 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/audit" element={<AuditReport />} />
+            
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            
-            {/* Added Missing Contact Route */}
             <Route path="/contact" element={<Contact />} />
             
             <Route path="/about" element={<About />} />
@@ -61,6 +66,8 @@ function App() {
             <Route path="/tools/incident-log" element={<IncidentLog />} />
             <Route path="/tools/ip-lookup" element={<IpLookup />} />
             <Route path="/tools/phishing-check" element={<PhishingDetector />} />
+            <Route path="/tools/file-encrypt" element={<FileEncrypt />} />
+            <Route path="/tools/webrtc-leak" element={<WebRTCLeak />} />
 
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />

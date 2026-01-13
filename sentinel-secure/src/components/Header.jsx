@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Shield, Lock, ChevronDown, ExternalLink } from 'lucide-react';
+import { Menu, X, Shield, Lock, ChevronDown, User } from 'lucide-react';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,15 +18,16 @@ const Header = () => {
         </h1>
       </Link>
       
-      {/* DESKTOP NAVIGATION */}
+      {/* DESKTOP */}
       <div className="hidden lg:flex gap-8 font-bold text-sm uppercase tracking-widest items-center">
         <Link to="/" className={`hover:text-blue-600 ${isActive('/')}`}>Home</Link>
-        <Link to="/services" className={`hover:text-blue-600 ${isActive('/services')}`}>Services</Link>
         
         {/* TOOLS DROPDOWN */}
         <div className="relative group cursor-pointer h-20 flex items-center">
-          <span className="flex items-center gap-1 hover:text-blue-600">Free Tools <ChevronDown size={14}/></span>
-          <div className="absolute top-20 left-0 w-56 bg-white border-2 border-black hidden group-hover:flex flex-col shadow-[4px_4px_0px_0px_#000]">
+          <span className="flex items-center gap-1 hover:text-blue-600">Tools <ChevronDown size={14}/></span>
+          <div className="absolute top-20 left-0 w-64 bg-white border-2 border-black hidden group-hover:flex flex-col shadow-[4px_4px_0px_0px_#000]">
+             <Link to="/tools/file-encrypt" className="p-3 hover:bg-gray-100 border-b border-gray-200">AES File Vault (New)</Link>
+             <Link to="/tools/webrtc-leak" className="p-3 hover:bg-gray-100 border-b border-gray-200">WebRTC Leak Check (New)</Link>
              <Link to="/tools/password-gen" className="p-3 hover:bg-gray-100 border-b border-gray-200">Password Gen</Link>
              <Link to="/tools/browser-check" className="p-3 hover:bg-gray-100 border-b border-gray-200">Browser Fingerprint</Link>
              <Link to="/tools/ip-lookup" className="p-3 hover:bg-gray-100 border-b border-gray-200">IP Lookup</Link>
@@ -41,14 +42,20 @@ const Header = () => {
         <div className="relative group cursor-pointer h-20 flex items-center">
           <span className="flex items-center gap-1 hover:text-blue-600">Company <ChevronDown size={14}/></span>
           <div className="absolute top-20 left-0 w-48 bg-white border-2 border-black hidden group-hover:flex flex-col shadow-[4px_4px_0px_0px_#000]">
+             <Link to="/services" className="p-3 hover:bg-gray-100 border-b border-gray-200">Services</Link>
              <Link to="/about" className="p-3 hover:bg-gray-100 border-b border-gray-200">About Us</Link>
+             <Link to="/audit" className="p-3 hover:bg-gray-100 border-b border-gray-200">Audit Report</Link>
              <Link to="/careers" className="p-3 hover:bg-gray-100 border-b border-gray-200">Careers</Link>
-             <Link to="/resources" className="p-3 hover:bg-gray-100 border-b border-gray-200">Whitepapers</Link>
              <Link to="/faq" className="p-3 hover:bg-gray-100">FAQ</Link>
           </div>
         </div>
 
         <Link to="/contact" className={`hover:text-blue-600 ${isActive('/contact')}`}>Contact</Link>
+
+        {/* User Actions */}
+        <Link to="/settings">
+            <User size={20} className="hover:text-blue-600"/>
+        </Link>
 
         <Link to="/dashboard" className="px-6 py-2 bg-red-600 text-white border-2 border-black hover:bg-black transition-colors flex items-center gap-2">
            <Lock size={16} /> Portal
@@ -60,39 +67,29 @@ const Header = () => {
         {isOpen ? <X size={32} /> : <Menu size={32} />}
       </button>
 
-      {/* MOBILE MENU OVERLAY */}
+      {/* MOBILE MENU */}
       {isOpen && (
         <div className="absolute top-20 left-0 w-full h-[calc(100vh-80px)] overflow-y-auto bg-white border-t-2 border-black p-8 flex flex-col gap-8 z-40 pb-32">
           
           <div className="flex flex-col gap-4">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Main</p>
             <Link to="/" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Home</Link>
-            <Link to="/services" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Services</Link>
-            <Link to="/contact" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Contact</Link>
+            <Link to="/audit" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Audit Report</Link>
+            <Link to="/settings" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Settings</Link>
             <Link to="/dashboard" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase text-red-600 flex items-center gap-2"><Lock size={20}/> Portal Login</Link>
           </div>
 
           <div className="h-px bg-gray-200"></div>
 
           <div className="flex flex-col gap-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Free Tools</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Advanced Tools</p>
+            <Link to="/tools/file-encrypt" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600 text-green-600">AES File Vault</Link>
+            <Link to="/tools/webrtc-leak" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600 text-green-600">WebRTC Leak Check</Link>
             <Link to="/tools/password-gen" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">Password Generator</Link>
             <Link to="/tools/browser-check" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">Browser Fingerprint</Link>
             <Link to="/tools/ip-lookup" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">IP Lookup</Link>
             <Link to="/tools/phishing-check" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">Phishing Check</Link>
             <Link to="/tools/secure-notes" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">Secure Vault</Link>
-            <Link to="/tools/speed-test" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">Speed Test</Link>
-            <Link to="/tools/incident-log" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">Incident Log</Link>
-          </div>
-
-          <div className="h-px bg-gray-200"></div>
-
-          <div className="flex flex-col gap-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Company</p>
-            <Link to="/about" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">About Us</Link>
-            <Link to="/careers" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">Careers</Link>
-            <Link to="/resources" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">Whitepapers</Link>
-            <Link to="/faq" onClick={() => setIsOpen(false)} className="text-lg font-bold hover:text-blue-600">FAQ</Link>
           </div>
 
           <div className="flex flex-col gap-4 mt-auto">
