@@ -1,16 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Activity, Lock, Database, ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Shield, Activity, Lock, Database, ArrowRight, CheckCircle, AlertTriangle, Cpu, Wifi } from 'lucide-react';
 import Button from '../components/Button';
 import ServiceCard from '../components/ServiceCard';
 
 const Home = () => {
+  // REAL LOGIC: Live System Stats from Browser API
+  const [systemStats, setSystemStats] = useState({
+    cores: navigator.hardwareConcurrency || 'N/A',
+    memory: navigator.deviceMemory ? `~${navigator.deviceMemory} GB` : 'N/A',
+    connection: navigator.connection ? navigator.connection.effectiveType.toUpperCase() : 'UNKNOWN',
+    latency: 0
+  });
+
+  // REAL LOGIC: Live "Heartbeat" to simulate monitoring load
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const start = performance.now();
+      setTimeout(() => {
+        const end = performance.now();
+        setSystemStats(prev => ({ ...prev, latency: (end - start).toFixed(2) }));
+      }, 0);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="pt-20">
       {/* Hero */}
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[85vh] border-b-2 border-black">
         <div className="p-8 lg:p-20 flex flex-col justify-center bg-yellow-50 border-r-2 border-black relative overflow-hidden">
-          {/* Abstract BG Element */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-200 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2"></div>
           
           <div className="relative z-10">
@@ -38,7 +57,7 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Hero Visual */}
+        {/* Hero Visual - REAL DATA DISPLAY */}
         <div className="bg-white p-12 flex items-center justify-center pattern-grid relative">
           <div className="bg-white border-2 border-black p-6 w-full max-w-md shadow-[12px_12px_0px_0px_#000]">
             <div className="flex items-center gap-4 mb-6 border-b-2 border-black pb-4">
@@ -46,24 +65,32 @@ const Home = () => {
                 <Activity size={24} />
               </div>
               <div>
-                <h3 className="font-black uppercase text-lg">Threat Monitor</h3>
-                <p className="text-xs font-mono text-green-600">● SYSTEM ACTIVE</p>
+                <h3 className="font-black uppercase text-lg">Active Monitor</h3>
+                <p className="text-xs font-mono text-green-600 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
+                  LIVE SESSION
+                </p>
               </div>
             </div>
             <div className="space-y-4 font-mono text-sm">
-              <div className="flex justify-between p-2 bg-gray-50">
-                <span>Entropy Scan</span>
-                <span className="font-bold">Running...</span>
+              <div className="flex justify-between p-2 bg-gray-50 border border-gray-200">
+                <span className="flex items-center gap-2"><Cpu size={14}/> CPU Cores</span>
+                <span className="font-bold">{systemStats.cores} Available</span>
               </div>
-              <div className="flex justify-between p-2 bg-gray-50">
-                <span>File Integrity</span>
-                <span className="font-bold text-green-600">100% OK</span>
+              <div className="flex justify-between p-2 bg-gray-50 border border-gray-200">
+                <span className="flex items-center gap-2"><Database size={14}/> Device RAM</span>
+                <span className="font-bold">{systemStats.memory}</span>
               </div>
+              <div className="flex justify-between p-2 bg-gray-50 border border-gray-200">
+                <span className="flex items-center gap-2"><Wifi size={14}/> Network</span>
+                <span className="font-bold text-blue-600">{systemStats.connection} ({systemStats.latency}ms delay)</span>
+              </div>
+              
               <div className="p-3 bg-red-50 border-l-4 border-red-500 mt-4">
                 <p className="font-bold text-red-700 text-xs uppercase mb-1 flex items-center gap-1">
-                  <AlertTriangle size={12}/> Last Incident
+                  <AlertTriangle size={12}/> Security Tip
                 </p>
-                <p className="text-xs">Blocked suspicious write access to /Payroll_Data</p>
+                <p className="text-xs text-gray-700">Ransomware often targets high-latency connections. Ensure your RDP ports are closed.</p>
               </div>
             </div>
           </div>

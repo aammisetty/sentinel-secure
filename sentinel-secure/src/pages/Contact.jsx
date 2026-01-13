@@ -1,12 +1,12 @@
 import React from 'react';
-import { MessageCircle, Phone, Mail } from 'lucide-react';
+import { MessageCircle, Phone, Mail, MapPin } from 'lucide-react';
 import Button from '../components/Button';
 
 const Contact = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const text = `*New SME Inquiry*\nName: ${fd.get('name')}\nEmail: ${fd.get('email')}\nService: ${fd.get('plan')}\nNote: ${fd.get('message')}`;
+    const text = `*New SME Inquiry*\n\nName: ${fd.get('name')}\nEmail: ${fd.get('email')}\nService: ${fd.get('plan')}\nMessage: ${fd.get('message')}`;
     window.open(`https://wa.me/918329004424?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -28,6 +28,10 @@ const Contact = () => {
             <div className="bg-white text-black p-3 rounded-full border-2 border-black"><Mail size={20}/></div>
             contact.aa@tuta.io
           </div>
+          <div className="flex items-center gap-4">
+            <div className="bg-white text-black p-3 rounded-full border-2 border-black"><MapPin size={20}/></div>
+            Baner, Pune, India
+          </div>
         </div>
       </div>
 
@@ -35,15 +39,15 @@ const Contact = () => {
         <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
           <div>
             <label className="block text-sm font-bold uppercase mb-2">Company Name</label>
-            <input name="name" required className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors" placeholder="ABC Pvt Ltd" />
+            <input name="name" required className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]" placeholder="ABC Pvt Ltd" />
           </div>
           <div>
             <label className="block text-sm font-bold uppercase mb-2">Email</label>
-            <input name="email" type="email" required className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors" placeholder="admin@abc.com" />
+            <input name="email" type="email" required className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]" placeholder="admin@abc.com" />
           </div>
           <div>
             <label className="block text-sm font-bold uppercase mb-2">Select Plan</label>
-            <select name="plan" className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors">
+            <select name="plan" className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]">
               <option>Standard Defense (₹5k/mo)</option>
               <option>Audit Only (One Time)</option>
               <option>Enterprise (Custom)</option>
@@ -51,7 +55,7 @@ const Contact = () => {
           </div>
           <div>
             <label className="block text-sm font-bold uppercase mb-2">Message</label>
-            <textarea name="message" rows="4" className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors" placeholder="Describe your current infrastructure..."></textarea>
+            <textarea name="message" rows="4" className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]" placeholder="Describe your current infrastructure..."></textarea>
           </div>
           <Button className="w-full bg-green-500 text-white hover:bg-green-600 border-black">
             <MessageCircle className="mr-2"/> Chat via WhatsApp

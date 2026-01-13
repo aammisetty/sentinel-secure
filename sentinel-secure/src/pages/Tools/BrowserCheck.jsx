@@ -16,14 +16,14 @@ const BrowserCheck = () => {
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {info && Object.entries(info).map(([key, val]) => (
-          <div key={key} className="p-6 border-2 border-black bg-white hover:bg-yellow-50 transition-colors">
+          <div key={key} className="p-6 border-2 border-black bg-white hover:bg-yellow-50 transition-colors neo-shadow">
              <h3 className="text-xs font-bold uppercase text-gray-500 mb-2">{key}</h3>
              <p className="font-mono text-lg font-black break-words">{val.toString()}</p>
           </div>
         ))}
       </div>
-      <p className="mt-8 text-sm text-gray-500 font-mono">
-        *This data is read from your navigator object. It is what websites see when you visit them.
+      <p className="mt-8 text-sm text-gray-500 font-mono border-t-2 border-dashed border-gray-300 pt-4">
+        *This data is read directly from your <code>navigator</code> object. This is what websites see when you visit them.
       </p>
     </div>
   );

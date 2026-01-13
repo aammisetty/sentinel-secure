@@ -20,21 +20,21 @@ const PasswordGen = () => {
         <Key size={40} className="text-blue-600" /> CSPRNG Password Generator
       </h1>
       <div className="bg-gray-50 border-2 border-black p-8 neo-shadow">
-        <p className="mb-6 font-mono text-gray-600">
-          Uses <code>window.crypto.getRandomValues</code> for cryptographically secure randomness. Not `Math.random()`.
+        <p className="mb-6 font-mono text-gray-600 text-sm">
+          Cryptographically secure randomness using <code>window.crypto.getRandomValues</code>.
         </p>
         
         <div className="bg-white border-2 border-black p-6 mb-8 flex items-center justify-between">
-            <span className="font-mono text-2xl break-all">{pass || 'CLICK GENERATE'}</span>
-            <button onClick={copy} className="p-2 hover:bg-gray-100 rounded border border-black"><Copy/></button>
+            <span className="font-mono text-2xl break-all font-bold">{pass || 'CLICK GENERATE'}</span>
+            <button onClick={copy} className="p-2 hover:bg-gray-100 rounded border-2 border-black active:translate-y-1 transition-all"><Copy/></button>
         </div>
 
         <div className="flex items-center gap-4 mb-8">
-           <label className="font-bold uppercase">Length: {len}</label>
+           <label className="font-bold uppercase w-24">Length: {len}</label>
            <input 
              type="range" min="8" max="64" value={len} 
              onChange={(e) => setLen(parseInt(e.target.value))}
-             className="w-full accent-black"
+             className="w-full accent-black h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
            />
         </div>
 
