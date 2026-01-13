@@ -157,9 +157,11 @@ We read the first 4 bytes (`ArrayBuffer`) of any uploaded file to verify its sig
 
 **Arun Ammisetty**
 
-* **Website:** [arunammisetty.in](https://www.google.com/search?q=https://arunammisetty.in)
-* **GitHub:** [@aammisetty](https://github.com/aammisetty)
-* **Role:** Developer & Security Researcher
+[![Website](https://img.shields.io/badge/Website-Arun/Ammisetty-black?logo=google-chrome)](https://go.ly/am)
+[![GitHub](https://img.shields.io/badge/GitHub-aammisetty-black?logo=github)](https://github.com/aammisetty)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Arun%20Ammisetty-black?logo=linkedin)](https://www.linkedin.com/in/arun-ammisetty)
+
+**Role:** Developer & Security Researcher
 
 ## 📄 License
 
