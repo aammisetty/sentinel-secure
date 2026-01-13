@@ -45,6 +45,9 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             
+            {/* Added Missing Contact Route */}
+            <Route path="/contact" element={<Contact />} />
+            
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
             <Route path="/faq" element={<FAQ />} />
