@@ -164,5 +164,3 @@ We read the first 4 bytes (`ArrayBuffer`) of any uploaded file to verify its sig
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
-
-```
