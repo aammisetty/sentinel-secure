@@ -39,15 +39,29 @@ const Contact = () => {
         <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
           <div>
             <label className="block text-sm font-bold uppercase mb-2">Company Name</label>
-            <input name="name" required className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]" placeholder="ABC Pvt Ltd" />
+            <input 
+              name="name" 
+              required 
+              className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-all focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]" 
+              placeholder="ABC Pvt Ltd" 
+            />
           </div>
           <div>
             <label className="block text-sm font-bold uppercase mb-2">Email</label>
-            <input name="email" type="email" required className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]" placeholder="admin@abc.com" />
+            <input 
+              name="email" 
+              type="email" 
+              required 
+              className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-all focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]" 
+              placeholder="admin@abc.com" 
+            />
           </div>
           <div>
             <label className="block text-sm font-bold uppercase mb-2">Select Plan</label>
-            <select name="plan" className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]">
+            <select 
+              name="plan" 
+              className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-all focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]"
+            >
               <option>Standard Defense (₹5k/mo)</option>
               <option>Audit Only (One Time)</option>
               <option>Enterprise (Custom)</option>
@@ -55,9 +69,14 @@ const Contact = () => {
           </div>
           <div>
             <label className="block text-sm font-bold uppercase mb-2">Message</label>
-            <textarea name="message" rows="4" className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-colors focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]" placeholder="Describe your current infrastructure..."></textarea>
+            <textarea 
+              name="message" 
+              rows="4" 
+              className="w-full p-4 border-2 border-black bg-gray-50 focus:bg-white transition-all focus:outline-none focus:shadow-[4px_4px_0px_0px_#000]" 
+              placeholder="Describe your current infrastructure..."
+            ></textarea>
           </div>
-          <Button className="w-full bg-green-500 text-white hover:bg-green-600 border-black">
+          <Button type="submit" className="w-full bg-green-500 text-white hover:bg-green-600 border-black hover:text-white">
             <MessageCircle className="mr-2"/> Chat via WhatsApp
           </Button>
         </form>
