@@ -40,21 +40,21 @@ const Pricing = () => {
   };
 
   return (
-    <div className="pt-48 min-h-screen bg-gray-50 p-6 lg:p-12 relative">
+    <div className="pt-64 min-h-screen bg-gray-50 p-6 lg:p-12 relative">
       <div className="max-w-7xl mx-auto">
         
         {/* 1. HEADER */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-            <h1 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter mb-6">
+        <div className="text-center max-w-3xl mx-auto mb-24 mt-8">
+            <h1 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter mb-6 leading-tight">
                 Transparent <span className="text-blue-600">Pricing</span>
             </h1>
-            <p className="text-xl text-gray-600 font-medium mb-8">
+            <p className="text-xl text-gray-600 font-medium mb-10">
                 No hidden setup fees. No long-term contracts. 
                 Invest in your security infrastructure today.
             </p>
 
             {/* Toggle */}
-            <div className="inline-flex items-center gap-4 bg-white border-2 border-black p-2 rounded-full">
+            <div className="inline-flex items-center gap-4 bg-white border-2 border-black p-2 rounded-full shadow-lg">
                 <button 
                     onClick={() => setBilling('monthly')}
                     className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${billing === 'monthly' ? 'bg-black text-white' : 'text-gray-500 hover:text-black'}`}
