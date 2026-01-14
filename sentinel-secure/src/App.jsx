@@ -9,11 +9,17 @@ import Dashboard from './pages/Dashboard';
 import Contact from './pages/Contact';
 import About from './pages/About';
 import Services from './pages/Services';
+import Pricing from './pages/Pricing';   // NEW
 import FAQ from './pages/FAQ';
 import Resources from './pages/Resources';
 import Careers from './pages/Careers';
 import Settings from './pages/Settings';
 import AuditReport from './pages/AuditReport';
+import Status from './pages/Status';
+import Security from './pages/Security';
+import Partners from './pages/Partners';
+import Press from './pages/Press';
+import Sitemap from './pages/Sitemap';
 
 // Auth
 import Login from './pages/Auth/Login';
@@ -36,7 +42,7 @@ import Terms from './pages/Legal/Terms';
 import Disclaimer from './pages/Legal/Disclaimer';
 import Refund from './pages/Legal/Refund';
 import AcceptableUse from './pages/Legal/AcceptableUse';
-import CookiePolicy from './pages/Legal/CookiePolicy'; // NEW
+import CookiePolicy from './pages/Legal/CookiePolicy';
 
 function App() {
   return (
@@ -56,9 +62,16 @@ function App() {
             
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/pricing" element={<Pricing />} /> {/* NEW ROUTE */}
             <Route path="/faq" element={<FAQ />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/careers" element={<Careers />} />
+
+            <Route path="/status" element={<Status />} />
+            <Route path="/security" element={<Security />} />
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/press" element={<Press />} />
+            <Route path="/sitemap" element={<Sitemap />} />
 
             <Route path="/tools/password-gen" element={<PasswordGen />} />
             <Route path="/tools/browser-check" element={<BrowserCheck />} />
