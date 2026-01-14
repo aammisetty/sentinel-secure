@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Activity, Upload, AlertOctagon, FileText, Zap, Wifi, ShieldAlert, Binary, 
-  RefreshCw, LogOut, User, MapPin, Maximize, Lock, Scissors, Eye, Cpu, Database 
+  RefreshCw, LogOut, User, MapPin, Maximize, Lock, Scissors, Eye, Cpu, Database, 
+  Globe, Smartphone, HardDrive, Fingerprint, Camera, Speaker, Monitor, Layers, Shield
 } from 'lucide-react';
 import Button from '../components/Button';
 import { analyzeFile } from '../utils/cryptoLogic';
@@ -23,6 +24,25 @@ const Dashboard = () => {
   const [memory, setMemory] = useState('N/A');
   const [ua, setUa] = useState('');
   
+  // -- NEW STATE: 20+ FEATURES --
+  const [connectionType, setConnectionType] = useState('Unknown');
+  const [cores, setCores] = useState(navigator.hardwareConcurrency || 'N/A');
+  const [screenRes, setScreenRes] = useState(`${window.screen.width}x${window.screen.height}`);
+  const [doNotTrack, setDoNotTrack] = useState(navigator.doNotTrack || 'Unspecified');
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [platform, setPlatform] = useState(navigator.platform);
+  const [language, setLanguage] = useState(navigator.language);
+  const [touchPoints, setTouchPoints] = useState(navigator.maxTouchPoints || 0);
+  const [cookieEnabled, setCookieEnabled] = useState(navigator.cookieEnabled);
+  const [storageQuota, setStorageQuota] = useState('Calculating...');
+  const [gpuRenderer, setGpuRenderer] = useState('Analyzing...');
+  const [canvasHash, setCanvasHash] = useState('Pending');
+  const [audioHash, setAudioHash] = useState('Pending');
+  const [permissions, setPermissions] = useState({ cam: '?', mic: '?', loc: '?' });
+  const [historyLen, setHistoryLen] = useState(window.history.length);
+  const [darkMode, setDarkMode] = useState(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const [pdfViewer, setPdfViewer] = useState('Unknown');
+  
   // -- STATE: UI --
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
@@ -41,15 +61,20 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // 3. HARDWARE & NETWORK LISTENERS
+  // 3. HARDWARE & NETWORK LISTENERS & FINGERPRINTING
   useEffect(() => {
     setUa(navigator.userAgent);
 
-    // Network
+    // Network Status
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+
+    // Network Type (Chrome/Android only)
+    if (navigator.connection) {
+        setConnectionType(navigator.connection.effectiveType || 'Wifi/Eth');
+    }
 
     // Battery
     if (navigator.getBattery) {
@@ -72,6 +97,46 @@ const Dashboard = () => {
       return () => clearInterval(memInterval);
     }
 
+    // Storage Estimation
+    if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(estimate => {
+            const gb = (estimate.quota / 1024 / 1024 / 1024).toFixed(1);
+            setStorageQuota(`${gb} GB`);
+        });
+    }
+
+    // GPU Fingerprint
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl');
+        if (gl) {
+            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            if (debugInfo) {
+                setGpuRenderer(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
+            }
+        }
+    } catch(e) { setGpuRenderer('Blocked'); }
+
+    // Canvas Fingerprint (Hash)
+    try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.textBaseline = "top";
+        ctx.font = "14px 'Arial'";
+        ctx.fillStyle = "#f60";
+        ctx.fillRect(125,1,62,20);
+        ctx.fillStyle = "#069";
+        ctx.fillText("Sentinel", 2, 15);
+        ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+        ctx.fillText("Sentinel", 4, 17);
+        const b64 = canvas.toDataURL().replace("data:image/png;base64,", "");
+        const bin = atob(b64);
+        setCanvasHash(bin.slice(-8, -1).split('').map(c => c.charCodeAt(0).toString(16)).join(''));
+    } catch(e) { setCanvasHash('Error'); }
+
+    // PDF Viewer Check
+    setPdfViewer(Array.from(navigator.plugins).some(p => p.name.includes('PDF')) ? 'Native Support' : 'No Plugin');
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
@@ -88,7 +153,19 @@ const Dashboard = () => {
     }
   };
 
-  // 5. REAL LOGIC: File Hashing & Analysis
+  // 5. REAL LOGIC: Permission Scan
+  const checkPermissions = async () => {
+    try {
+        const c = await navigator.permissions.query({ name: 'camera' });
+        const m = await navigator.permissions.query({ name: 'microphone' });
+        const l = await navigator.permissions.query({ name: 'geolocation' });
+        setPermissions({ cam: c.state, mic: m.state, loc: l.state });
+    } catch(e) {
+        setPermissions({ cam: 'Error', mic: 'Error', loc: 'Error' });
+    }
+  };
+
+  // 6. REAL LOGIC: File Hashing & Analysis
   const generateHash = async (file) => {
     const buffer = await file.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
@@ -134,7 +211,7 @@ const Dashboard = () => {
     setIsProcessing(false);
   };
 
-  // 6. ACTIONS
+  // 7. ACTIONS
   const triggerLockdown = () => {
     if (window.confirm("ARE YOU SURE? This will alert the support team.")) {
       setLockdownStatus('locked');
@@ -175,11 +252,18 @@ const Dashboard = () => {
     }
   };
 
+  const testVibration = () => {
+      if(navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+      } else {
+          alert("Vibration API not supported on this device.");
+      }
+  };
+
   const lockSession = () => {
     navigate('/login');
   };
 
-  // Format Timer
   const formatTime = (s) => {
     const mins = Math.floor(s / 60);
     const secs = s % 60;
@@ -231,10 +315,6 @@ const Dashboard = () => {
               <h2 className="font-black uppercase text-xl mb-4 flex items-center gap-2">
                 <Binary className="text-blue-600" /> Deep File Forensics
               </h2>
-              <p className="text-gray-600 text-sm mb-6">
-                Checks <strong>Entropy</strong>, <strong>Magic Bytes</strong>, and <strong>SHA-256</strong> locally.
-              </p>
-
               <div className="relative border-2 border-dashed border-gray-300 bg-gray-50 p-12 text-center hover:bg-blue-50 transition-colors group cursor-pointer">
                 <input 
                   type="file" 
@@ -245,7 +325,6 @@ const Dashboard = () => {
                 <Upload className="mx-auto mb-4 text-gray-400 group-hover:text-blue-600" size={32} />
                 <p className="font-bold uppercase text-gray-500 group-hover:text-blue-600">Drop Files to Analyze</p>
               </div>
-
               {isProcessing && (
                 <div className="mt-4 p-4 bg-yellow-50 border-2 border-yellow-400 flex items-center gap-2 text-yellow-800 font-bold animate-pulse">
                   <RefreshCw className="animate-spin" /> Processing...
@@ -289,35 +368,121 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* SYSTEM HEALTH GRID */}
+            {/* --- EXPANDED SYSTEM HEALTH GRID (20+ FEATURES) --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* 1. Hardware Stats */}
                 <div className="bg-white border-2 border-black p-6">
-                    <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Cpu size={18}/> Process Monitor</h3>
-                    <div className="space-y-2 text-sm font-mono">
+                    <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Cpu size={18}/> Hardware Specs</h3>
+                    <div className="space-y-2 text-xs font-mono font-bold">
                         <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>JS Heap</span>
-                            <span className="font-bold">{memory}</span>
+                            <span>CPU Cores</span>
+                            <span>{cores}</span>
                         </div>
                         <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>User Agent</span>
-                            <span className="text-xs truncate w-32" title={ua}>Chrome/Linux</span>
+                            <span>JS Heap Memory</span>
+                            <span>{memory}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1">
+                            <span>Local Storage</span>
+                            <span>{storageQuota}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1">
+                            <span>Screen Res</span>
+                            <span>{screenRes}</span>
+                        </div>
+                        <div className="flex justify-between pt-1">
+                            <span>GPU Vendor</span>
+                            <span className="truncate w-32 text-right" title={gpuRenderer}>{gpuRenderer}</span>
                         </div>
                     </div>
                 </div>
+
+                {/* 2. Network & Privacy */}
                 <div className="bg-white border-2 border-black p-6">
-                    <h3 className="font-black uppercase mb-4 flex items-center gap-2"><MapPin size={18}/> Geolocation</h3>
-                    <div className="space-y-2 text-sm font-mono">
+                    <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Globe size={18}/> Network Identity</h3>
+                    <div className="space-y-2 text-xs font-mono font-bold">
                         <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Latitude</span>
-                            <span className="font-bold">{geo.lat}</span>
+                            <span>Connection Type</span>
+                            <span>{connectionType}</span>
                         </div>
                         <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Longitude</span>
-                            <span className="font-bold">{geo.lng}</span>
+                            <span>Do Not Track</span>
+                            <span className={doNotTrack === '1' ? 'text-green-600' : 'text-red-500'}>{doNotTrack === '1' ? 'ENABLED' : 'DISABLED'}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1">
+                            <span>Cookies</span>
+                            <span className={cookieEnabled ? 'text-green-600' : 'text-red-500'}>{cookieEnabled ? 'ENABLED' : 'DISABLED'}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1">
+                            <span>Platform</span>
+                            <span>{platform}</span>
+                        </div>
+                         <div className="flex justify-between pt-1">
+                            <span>Language</span>
+                            <span>{language.toUpperCase()}</span>
                         </div>
                     </div>
-                    <button onClick={fetchGeo} className="mt-2 text-xs font-bold text-blue-600 hover:underline">REFRESH COORDS</button>
                 </div>
+                
+                {/* 3. Fingerprinting Data */}
+                <div className="bg-white border-2 border-black p-6">
+                    <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Fingerprint size={18}/> Browser Fingerprint</h3>
+                    <div className="space-y-2 text-xs font-mono font-bold">
+                        <div className="flex justify-between border-b border-gray-200 pb-1">
+                            <span>Canvas Hash</span>
+                            <span className="text-gray-500">{canvasHash}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1">
+                            <span>Touch Points</span>
+                            <span>{touchPoints > 0 ? `${touchPoints} (Touch)` : '0 (Desktop)'}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1">
+                            <span>Timezone</span>
+                            <span>{timezone}</span>
+                        </div>
+                         <div className="flex justify-between border-b border-gray-200 pb-1">
+                            <span>Dark Mode</span>
+                            <span>{darkMode ? 'ON' : 'OFF'}</span>
+                        </div>
+                        <div className="flex justify-between pt-1">
+                            <span>PDF Plugin</span>
+                            <span>{pdfViewer}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. Active Sensors */}
+                <div className="bg-white border-2 border-black p-6">
+                    <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Shield size={18}/> Sensor & Permission</h3>
+                    
+                    {/* Geolocation */}
+                    <div className="mb-4">
+                        <div className="flex justify-between text-xs font-bold mb-1">
+                            <span>Geolocation</span>
+                            <span className={geo.lat === 'Blocked' ? 'text-red-500' : 'text-green-600'}>{geo.lat} / {geo.lng}</span>
+                        </div>
+                        <Button onClick={fetchGeo} variant="secondary" className="w-full text-xs py-1 h-auto">Ping Location</Button>
+                    </div>
+
+                    {/* Permission Status */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-gray-100 p-2 border border-black">
+                            <Camera size={16} className="mx-auto mb-1"/>
+                            <div className="text-[10px] font-bold uppercase">{permissions.cam}</div>
+                        </div>
+                        <div className="bg-gray-100 p-2 border border-black">
+                            <Speaker size={16} className="mx-auto mb-1"/>
+                            <div className="text-[10px] font-bold uppercase">{permissions.mic}</div>
+                        </div>
+                        <div className="bg-gray-100 p-2 border border-black">
+                            <MapPin size={16} className="mx-auto mb-1"/>
+                            <div className="text-[10px] font-bold uppercase">{permissions.loc}</div>
+                        </div>
+                    </div>
+                    <Button onClick={checkPermissions} className="w-full mt-2 text-xs py-1 h-auto bg-black text-white">Scan Permissions</Button>
+                </div>
+
             </div>
           </div>
 
@@ -368,6 +533,12 @@ const Dashboard = () => {
                   <Button onClick={() => navigate('/tools/ip-lookup')} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto">
                       <Eye size={20} className="mb-1"/> IP Scan
                   </Button>
+                  <Button onClick={testVibration} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto">
+                      <Smartphone size={20} className="mb-1"/> Vibrate
+                  </Button>
+                  <Button onClick={() => alert(`History Length: ${historyLen}`)} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto">
+                      <Layers size={20} className="mb-1"/> History
+                  </Button>
               </div>
             </div>
 
@@ -385,4 +556,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
