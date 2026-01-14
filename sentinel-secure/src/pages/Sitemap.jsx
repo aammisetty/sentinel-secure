@@ -2,7 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Home, Shield, Terminal, Globe, Lock, FileText, 
-  Users, HelpCircle, Scale, Server, Briefcase, Database
+  Users, HelpCircle, Scale, Server, Briefcase, Database,
+  ShieldAlert
 } from 'lucide-react';
 
 const Sitemap = () => {
@@ -12,8 +13,8 @@ const Sitemap = () => {
       title: "Core Platform",
       links: [
         { name: "Home Page", path: "/" },
-        { name: "Dashboard Portal", path: "/dashboard" },
-        { name: "User Settings", path: "/settings" },
+        { name: "Dashboard Portal", path: "/dashboard", locked: true },
+        { name: "User Settings", path: "/settings", locked: true },
         { name: "Audit Report", path: "/audit" }
       ]
     },
@@ -21,9 +22,9 @@ const Sitemap = () => {
       icon: <Users size={20}/>,
       title: "Authentication",
       links: [
-        { name: "Login", path: "/login" },
-        { name: "Create Account", path: "/signup" },
-        { name: "Forgot Password", path: "/login" } 
+        { name: "Login", path: "/login", locked: true }, // LOCKED
+        { name: "Create Account", path: "/signup", locked: true }, // LOCKED
+        { name: "Admin Portal", path: "/admin/login", locked: true } 
       ]
     },
     {
@@ -31,7 +32,7 @@ const Sitemap = () => {
       title: "Forensic Tools",
       links: [
         { name: "AES File Encrypt", path: "/tools/file-encrypt" },
-        { name: "Incident Logger", path: "/tools/incident-log" },
+        { name: "Incident Logger", path: "/tools/incident-log", locked: true },
         { name: "WebRTC Leak Test", path: "/tools/webrtc-leak" }
       ]
     },
@@ -41,7 +42,9 @@ const Sitemap = () => {
       links: [
         { name: "IP Address Lookup", path: "/tools/ip-lookup" },
         { name: "Speed Test", path: "/tools/speed-test" },
-        { name: "Browser Fingerprint", path: "/tools/browser-check" }
+        { name: "Browser Fingerprint", path: "/tools/browser-check" },
+        { name: "DNSSEC Validator", path: "/tools/dns-validator", locked: true },
+        { name: "Subnet Mapper", path: "/tools/network-mapper", locked: true }
       ]
     },
     {
@@ -49,7 +52,8 @@ const Sitemap = () => {
       title: "Identity Security",
       links: [
         { name: "Password Generator", path: "/tools/password-gen" },
-        { name: "Phishing Detector", path: "/tools/phishing-check" },
+        { name: "Phishing Detector", path: "/tools/phishing-check", locked: true },
+        { name: "Dark Web Check", path: "/tools/pwned-check", locked: true },
         { name: "Secure Notes", path: "/tools/secure-notes" }
       ]
     },
@@ -110,7 +114,7 @@ const Sitemap = () => {
       ]
     },
     {
-      icon: <Shield size={20}/>,
+      icon: <ShieldAlert size={20}/>,
       title: "Emergency",
       links: [
         { name: "Ransomware Help", path: "/contact" },
@@ -130,7 +134,7 @@ const Sitemap = () => {
                 Global Sitemap
             </h1>
             <p className="text-xl text-gray-600 font-medium">
-                Directory of all tools, resources, and legal documents.
+                Directory of all tools, resources, and secure endpoints.
             </p>
         </div>
 
@@ -148,10 +152,11 @@ const Sitemap = () => {
                         {section.links.map((link, k) => (
                             <li key={k}>
                                 <Link 
-                                    to={link.path} 
-                                    className="text-gray-600 font-bold hover:text-black hover:underline hover:pl-2 transition-all block text-sm"
+                                    to={link.locked ? '/pricing' : link.path} 
+                                    className={`font-bold transition-all block text-sm flex items-center gap-2 ${link.locked ? 'text-gray-400 hover:text-red-600' : 'text-gray-600 hover:text-black hover:underline hover:pl-2'}`}
                                 >
                                     {link.name}
+                                    {link.locked && <Lock size={12} className="text-red-500" />}
                                 </Link>
                             </li>
                         ))}
@@ -163,7 +168,7 @@ const Sitemap = () => {
         {/* Footer Note */}
         <div className="mt-16 pt-8 border-t-2 border-black text-center">
             <p className="text-xs font-mono text-gray-500 uppercase">
-                &copy; 2026 Sentinel Secure. All routes mapped.
+                &copy; 2026 Sentinel Secure. Protected routes require active subscription.
             </p>
         </div>
 

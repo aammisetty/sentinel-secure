@@ -162,14 +162,13 @@ const Payment = () => {
     const refId = `REF-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     const sessionId = `SID-${Date.now()}`;
     try {
-      // Pushing Recipient GST (Optional) to real-time store
       const { error } = await supabase.from('payment_requests').insert([{
           txn_id: txnId, 
           ref_id: refId, 
           session_id: sessionId, 
           user_name: formData.name, 
           user_email: formData.email,
-          user_gst: formData.gst, // Added as requested
+          // user_gst removed to fix schema error
           amount: totalAmount, 
           plan: plan.name, 
           status: 'pending'
@@ -178,7 +177,10 @@ const Payment = () => {
       setStep(3);
       const msg = `*✅ PAYMENT VERIFICATION REQUEST*\n*Ref ID:* ${refId}\n*Session:* ${sessionId}\n*UTR:* ${txnId}\n*Amount:* ₹${totalAmount.toLocaleString('en-IN')}\nFounder, please verify this.`;
       window.open(`https://wa.me/918329004424?text=${encodeURIComponent(msg)}`, '_blank');
-    } catch (err) { alert("Database Connection Error."); }
+    } catch (err) { 
+      console.error(err);
+      alert("Database Connection Error. Please check console."); 
+    }
   };
 
   return (

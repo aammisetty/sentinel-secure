@@ -119,8 +119,14 @@ const Header = () => {
                 </Link>
             )}
 
-            <Link to="/settings">
-                <User size={20} className="hover:text-blue-600"/>
+            {/* SETTINGS LINK (LOCKED for Free Users) */}
+            <Link to={isLocked('starter') ? "/pricing" : "/settings"} className="relative group">
+                <User size={20} className={isLocked('starter') ? "text-gray-400" : "hover:text-blue-600"}/>
+                {isLocked('starter') && (
+                  <div className="absolute -top-2 -right-2 bg-black text-white rounded-full p-[2px]">
+                    <Lock size={8} />
+                  </div>
+                )}
             </Link>
 
             <Link to="/dashboard" className="px-6 py-2 bg-red-600 text-white border-2 border-black hover:bg-black transition-colors flex items-center gap-2">
@@ -142,6 +148,11 @@ const Header = () => {
                 {isAdmin && <Link to="/admin/verify" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase text-yellow-600">Founder Verification</Link>}
                 <Link to="/pricing" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Pricing</Link>
                 <Link to="/dashboard" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase text-red-600 flex items-center gap-2"><Lock size={20}/> Portal Login</Link>
+                
+                {/* Mobile Settings Lock */}
+                <Link to={isLocked('starter') ? "/pricing" : "/settings"} onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase flex items-center gap-2 hover:text-blue-600">
+                   {isLocked('starter') ? <span className="text-gray-400 flex items-center gap-2">Settings <Lock size={16}/></span> : "Settings"}
+                </Link>
               </div>
 
               <div className="h-px bg-gray-200"></div>

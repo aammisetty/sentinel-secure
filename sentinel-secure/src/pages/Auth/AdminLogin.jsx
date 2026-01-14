@@ -44,7 +44,7 @@ const AdminLogin = () => {
         setIsLoading(false);
       }
     } else {
-      setError('Access Denied: Restricted to Founder Only.');
+      setError('Access Denied: Restricted to Admin Only.');
     }
   };
 
@@ -66,7 +66,7 @@ const AdminLogin = () => {
           <div className="w-16 h-16 bg-black text-white flex items-center justify-center mx-auto mb-4">
             <ShieldCheck size={32} />
           </div>
-          <h1 className="text-2xl font-black uppercase tracking-tighter">Founder Access</h1>
+          <h1 className="text-2xl font-black uppercase tracking-tighter">Admin Access</h1>
           <p className="text-xs font-bold text-gray-500 uppercase mt-1">Sentinel Secure Systems v1.0</p>
         </div>
 
@@ -79,7 +79,7 @@ const AdminLogin = () => {
         {step === 1 ? (
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div>
-              <label className="block text-[10px] font-black uppercase mb-1">Founder Email</label>
+              <label className="block text-[10px] font-black uppercase mb-1">Admin Email</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 text-gray-400" size={18}/>
                 <input 

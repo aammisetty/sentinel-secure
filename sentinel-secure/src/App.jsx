@@ -82,7 +82,7 @@ const GlobalBlockGuard = ({ children }) => {
             <p className="text-sm font-bold text-red-200">REASON: FRAUDULENT PAYMENT CLAIM DETECTED</p>
             <p className="text-xs opacity-60 mt-1">STATUS: NON-APPEALABLE TERMINATION</p>
           </div>
-          <p className="text-[10px] uppercase opacity-40">Founder Override Required for Restoration (testcodecfg@gmail.com)</p>
+          <p className="text-[10px] uppercase opacity-40">Admin Override Required for Restoration (abuse.sentinel@tuta.io)</p>
         </div>
       </div>
     );
