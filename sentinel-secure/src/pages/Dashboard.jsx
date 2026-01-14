@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Activity, Upload, AlertOctagon, FileText, Zap, Wifi, ShieldAlert, Binary, 
-  RefreshCw, LogOut, User, MapPin, Maximize, Lock, Scissors, Eye, Cpu, Database, 
-  Globe, Smartphone, HardDrive, Fingerprint, Camera, Speaker, Monitor, Layers, Shield
+  Activity, Upload, AlertOctagon, FileText, Zap, Wifi, Binary, 
+  RefreshCw, LogOut, User, MapPin, Maximize, Lock, Scissors, Eye, Cpu, 
+  Globe, Smartphone, Fingerprint, Camera, Speaker, Layers, Shield,
+  Bluetooth, Usb, CreditCard, Music, Video, Terminal, Play
 } from 'lucide-react';
 import Button from '../components/Button';
 import { analyzeFile } from '../utils/cryptoLogic';
@@ -22,9 +23,8 @@ const Dashboard = () => {
   const [online, setOnline] = useState(navigator.onLine);
   const [geo, setGeo] = useState({ lat: '...', lng: '...' });
   const [memory, setMemory] = useState('N/A');
-  const [ua, setUa] = useState('');
   
-  // -- NEW STATE: 20+ FEATURES --
+  // -- STATE: BASIC FEATURES --
   const [connectionType, setConnectionType] = useState('Unknown');
   const [cores, setCores] = useState(navigator.hardwareConcurrency || 'N/A');
   const [screenRes, setScreenRes] = useState(`${window.screen.width}x${window.screen.height}`);
@@ -42,8 +42,22 @@ const Dashboard = () => {
   const [historyLen, setHistoryLen] = useState(window.history.length);
   const [darkMode, setDarkMode] = useState(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [pdfViewer, setPdfViewer] = useState('Unknown');
+
+  // -- NEW STATE: DEEP TELEMETRY --
+  const [deepScan, setDeepScan] = useState({
+    maxTextureSize: 0, maxRenderBuffer: 0, aliasedLineRange: 'N/A',
+    sampleRate: 0, channelCount: 0,
+    downlink: 'N/A', rtt: 'N/A', saveData: 'N/A',
+    chargeTime: 'N/A', dischargeTime: 'N/A',
+    colorDepth: 0, pixelRatio: 1,
+    bluetooth: false, usb: false, gamepad: false, vr: false, midi: false,
+    webWorkers: false, serviceWorker: false, sharedWorkers: false,
+    indexedDB: false, localStorage: false, sessionStorage: false,
+    paymentAPI: false, credentialsAPI: false, wakeLock: false,
+    emeSupport: false, pipSupport: false,
+    vendor: '', javaEnabled: false
+  });
   
-  // -- STATE: UI --
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
 
@@ -61,17 +75,15 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // 3. HARDWARE & NETWORK LISTENERS & FINGERPRINTING
+  // 3. LISTENERS & SCANS
   useEffect(() => {
-    setUa(navigator.userAgent);
-
     // Network Status
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Network Type (Chrome/Android only)
+    // Network Type
     if (navigator.connection) {
         setConnectionType(navigator.connection.effectiveType || 'Wifi/Eth');
     }
@@ -86,18 +98,16 @@ const Dashboard = () => {
       });
     }
 
-    // Memory (Chrome only)
+    // Memory
     if (performance.memory) {
       const updateMem = () => {
         const used = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1);
         setMemory(`${used} MB`);
       };
-      const memInterval = setInterval(updateMem, 2000);
       updateMem();
-      return () => clearInterval(memInterval);
     }
 
-    // Storage Estimation
+    // Storage
     if (navigator.storage && navigator.storage.estimate) {
         navigator.storage.estimate().then(estimate => {
             const gb = (estimate.quota / 1024 / 1024 / 1024).toFixed(1);
@@ -105,19 +115,17 @@ const Dashboard = () => {
         });
     }
 
-    // GPU Fingerprint
+    // GPU
     try {
         const canvas = document.createElement('canvas');
         const gl = canvas.getContext('webgl');
         if (gl) {
             const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-            if (debugInfo) {
-                setGpuRenderer(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
-            }
+            if (debugInfo) setGpuRenderer(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
         }
-    } catch(e) { setGpuRenderer('Blocked'); }
+    } catch(e) {}
 
-    // Canvas Fingerprint (Hash)
+    // Canvas Hash
     try {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -127,15 +135,14 @@ const Dashboard = () => {
         ctx.fillRect(125,1,62,20);
         ctx.fillStyle = "#069";
         ctx.fillText("Sentinel", 2, 15);
-        ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-        ctx.fillText("Sentinel", 4, 17);
         const b64 = canvas.toDataURL().replace("data:image/png;base64,", "");
         const bin = atob(b64);
         setCanvasHash(bin.slice(-8, -1).split('').map(c => c.charCodeAt(0).toString(16)).join(''));
-    } catch(e) { setCanvasHash('Error'); }
+    } catch(e) {}
 
-    // PDF Viewer Check
     setPdfViewer(Array.from(navigator.plugins).some(p => p.name.includes('PDF')) ? 'Native Support' : 'No Plugin');
+
+    runDeepScan();
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -143,7 +150,76 @@ const Dashboard = () => {
     };
   }, []);
 
-  // 4. REAL LOGIC: Geolocation
+  const runDeepScan = async () => {
+    let scanData = {};
+
+    // WebGL Extras
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl');
+        if (gl) {
+            scanData.maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+            scanData.maxRenderBuffer = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE);
+            const aliased = gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE);
+            scanData.aliasedLineRange = aliased ? `${aliased[0]}-${aliased[1]}` : 'N/A';
+        }
+    } catch(e) {}
+
+    // Audio
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if(AudioContext) {
+            const audioCtx = new AudioContext();
+            scanData.sampleRate = audioCtx.sampleRate;
+            scanData.channelCount = audioCtx.destination.channelCount;
+            setAudioHash(`${audioCtx.sampleRate}-${audioCtx.destination.channelCount}-HW`); 
+            audioCtx.close();
+        }
+    } catch(e) {}
+
+    // Connection Extras
+    if(navigator.connection) {
+        scanData.downlink = navigator.connection.downlink + ' Mbps';
+        scanData.rtt = navigator.connection.rtt + ' ms';
+        scanData.saveData = navigator.connection.saveData ? 'On' : 'Off';
+    }
+
+    // Battery Extras
+    if(navigator.getBattery) {
+        const b = await navigator.getBattery();
+        scanData.chargeTime = b.chargingTime === Infinity ? 'Unknown' : b.chargingTime + 's';
+        scanData.dischargeTime = b.dischargingTime === Infinity ? 'Unknown' : b.dischargingTime + 's';
+    }
+
+    scanData.colorDepth = window.screen.colorDepth;
+    scanData.pixelRatio = window.devicePixelRatio;
+
+    // Capabilities
+    scanData.bluetooth = 'bluetooth' in navigator;
+    scanData.usb = 'usb' in navigator;
+    scanData.gamepad = 'getGamepads' in navigator;
+    scanData.vr = 'xr' in navigator;
+    scanData.midi = 'requestMIDIAccess' in navigator;
+    
+    scanData.webWorkers = typeof Worker !== 'undefined';
+    scanData.sharedWorkers = typeof SharedWorker !== 'undefined';
+    scanData.serviceWorker = 'serviceWorker' in navigator;
+    scanData.indexedDB = 'indexedDB' in window;
+    scanData.localStorage = 'localStorage' in window;
+    scanData.sessionStorage = 'sessionStorage' in window;
+
+    scanData.paymentAPI = 'PaymentRequest' in window;
+    scanData.credentialsAPI = 'credentials' in navigator;
+    scanData.wakeLock = 'wakeLock' in navigator;
+    scanData.emeSupport = 'requestMediaKeySystemAccess' in navigator;
+    scanData.pipSupport = 'pictureInPictureEnabled' in document;
+
+    scanData.vendor = navigator.vendor;
+    scanData.javaEnabled = navigator.javaEnabled ? navigator.javaEnabled() : false;
+
+    setDeepScan(prev => ({...prev, ...scanData}));
+  };
+
   const fetchGeo = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -153,7 +229,6 @@ const Dashboard = () => {
     }
   };
 
-  // 5. REAL LOGIC: Permission Scan
   const checkPermissions = async () => {
     try {
         const c = await navigator.permissions.query({ name: 'camera' });
@@ -165,7 +240,6 @@ const Dashboard = () => {
     }
   };
 
-  // 6. REAL LOGIC: File Hashing & Analysis
   const generateHash = async (file) => {
     const buffer = await file.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
@@ -211,7 +285,6 @@ const Dashboard = () => {
     setIsProcessing(false);
   };
 
-  // 7. ACTIONS
   const triggerLockdown = () => {
     if (window.confirm("ARE YOU SURE? This will alert the support team.")) {
       setLockdownStatus('locked');
@@ -260,9 +333,7 @@ const Dashboard = () => {
       }
   };
 
-  const lockSession = () => {
-    navigate('/login');
-  };
+  const lockSession = () => navigate('/login');
 
   const formatTime = (s) => {
     const mins = Math.floor(s / 60);
@@ -307,7 +378,7 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* LEFT COLUMN: SCANNERS */}
+          {/* LEFT: SCANNERS */}
           <div className="lg:col-span-2 flex flex-col gap-6">
             
             {/* FILE SCANNER */}
@@ -316,12 +387,7 @@ const Dashboard = () => {
                 <Binary className="text-blue-600" /> Deep File Forensics
               </h2>
               <div className="relative border-2 border-dashed border-gray-300 bg-gray-50 p-12 text-center hover:bg-blue-50 transition-colors group cursor-pointer">
-                <input 
-                  type="file" 
-                  multiple 
-                  onChange={handleFileUpload} 
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
+                <input type="file" multiple onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"/>
                 <Upload className="mx-auto mb-4 text-gray-400 group-hover:text-blue-600" size={32} />
                 <p className="font-bold uppercase text-gray-500 group-hover:text-blue-600">Drop Files to Analyze</p>
               </div>
@@ -332,35 +398,19 @@ const Dashboard = () => {
               )}
             </div>
 
-            {/* RESULTS TABLE */}
+            {/* RESULTS */}
             {files.length > 0 && (
               <div className="bg-white border-2 border-black p-0 overflow-x-auto">
                 <table className="w-full text-left text-sm font-mono">
                   <thead className="bg-black text-white uppercase">
-                    <tr>
-                      <th className="p-4 border-r border-gray-700">File</th>
-                      <th className="p-4 border-r border-gray-700">Verdicts</th>
-                      <th className="p-4">Risk</th>
-                    </tr>
+                    <tr><th className="p-4">File</th><th className="p-4">Verdicts</th><th className="p-4">Risk</th></tr>
                   </thead>
                   <tbody>
                     {files.map((f, i) => (
-                      <tr key={i} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="p-4 font-bold border-r border-gray-200">
-                            {f.name} <span className="block text-xs font-normal text-gray-500">{f.size}</span>
-                        </td>
-                        <td className="p-4 border-r border-gray-200">
-                           <div className="text-xs">Hex: {f.magicHex}</div>
-                           <div className={`text-xs font-bold ${f.magicVerdict.includes('SPOOF') ? 'text-red-600' : 'text-green-600'}`}>
-                               {f.magicVerdict}
-                           </div>
-                           <div className="text-xs text-gray-400 mt-1" title={f.fullHash}>Hash: {f.hash}</div>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 font-bold text-xs border border-black ${f.finalRisk === 'CRITICAL' ? 'bg-red-500 text-white' : 'bg-green-200'}`}>
-                            {f.finalRisk}
-                          </span>
-                        </td>
+                      <tr key={i} className="border-b border-gray-200">
+                        <td className="p-4 font-bold">{f.name}</td>
+                        <td className="p-4 text-xs">{f.magicVerdict}</td>
+                        <td className="p-4 font-bold">{f.finalRisk}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -368,185 +418,120 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* --- EXPANDED SYSTEM HEALTH GRID (20+ FEATURES) --- */}
+            {/* SYSTEM GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                {/* 1. Hardware Stats */}
+                {/* 1. Hardware */}
                 <div className="bg-white border-2 border-black p-6">
                     <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Cpu size={18}/> Hardware Specs</h3>
                     <div className="space-y-2 text-xs font-mono font-bold">
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>CPU Cores</span>
-                            <span>{cores}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>JS Heap Memory</span>
-                            <span>{memory}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Local Storage</span>
-                            <span>{storageQuota}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Screen Res</span>
-                            <span>{screenRes}</span>
-                        </div>
-                        <div className="flex justify-between pt-1">
-                            <span>GPU Vendor</span>
-                            <span className="truncate w-32 text-right" title={gpuRenderer}>{gpuRenderer}</span>
-                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>CPU Cores</span><span>{cores}</span></div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>JS Heap</span><span>{memory}</span></div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>Storage</span><span>{storageQuota}</span></div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>Res</span><span>{screenRes}</span></div>
+                        <div className="flex justify-between pt-1"><span>GPU</span><span className="truncate w-32 text-right">{gpuRenderer}</span></div>
                     </div>
                 </div>
 
-                {/* 2. Network & Privacy */}
+                {/* 2. Network */}
                 <div className="bg-white border-2 border-black p-6">
                     <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Globe size={18}/> Network Identity</h3>
                     <div className="space-y-2 text-xs font-mono font-bold">
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Connection Type</span>
-                            <span>{connectionType}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Do Not Track</span>
-                            <span className={doNotTrack === '1' ? 'text-green-600' : 'text-red-500'}>{doNotTrack === '1' ? 'ENABLED' : 'DISABLED'}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Cookies</span>
-                            <span className={cookieEnabled ? 'text-green-600' : 'text-red-500'}>{cookieEnabled ? 'ENABLED' : 'DISABLED'}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Platform</span>
-                            <span>{platform}</span>
-                        </div>
-                         <div className="flex justify-between pt-1">
-                            <span>Language</span>
-                            <span>{language.toUpperCase()}</span>
-                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>Type</span><span>{connectionType}</span></div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>Do Not Track</span><span>{doNotTrack === '1' ? 'ON' : 'OFF'}</span></div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>Cookies</span><span>{cookieEnabled ? 'ON' : 'OFF'}</span></div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>OS</span><span>{platform}</span></div>
+                        <div className="flex justify-between pt-1"><span>Lang</span><span>{language}</span></div>
                     </div>
                 </div>
                 
-                {/* 3. Fingerprinting Data */}
+                {/* 3. Fingerprint */}
                 <div className="bg-white border-2 border-black p-6">
-                    <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Fingerprint size={18}/> Browser Fingerprint</h3>
+                    <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Fingerprint size={18}/> Fingerprint</h3>
                     <div className="space-y-2 text-xs font-mono font-bold">
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Canvas Hash</span>
-                            <span className="text-gray-500">{canvasHash}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Touch Points</span>
-                            <span>{touchPoints > 0 ? `${touchPoints} (Touch)` : '0 (Desktop)'}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Timezone</span>
-                            <span>{timezone}</span>
-                        </div>
-                         <div className="flex justify-between border-b border-gray-200 pb-1">
-                            <span>Dark Mode</span>
-                            <span>{darkMode ? 'ON' : 'OFF'}</span>
-                        </div>
-                        <div className="flex justify-between pt-1">
-                            <span>PDF Plugin</span>
-                            <span>{pdfViewer}</span>
-                        </div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>Canvas</span><span className="truncate w-24">{canvasHash}</span></div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>Audio</span><span className="truncate w-24">{audioHash}</span></div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>Touch</span><span>{touchPoints}</span></div>
+                        <div className="flex justify-between border-b border-gray-200 pb-1"><span>Timezone</span><span>{timezone}</span></div>
+                        <div className="flex justify-between pt-1"><span>PDF</span><span>{pdfViewer}</span></div>
                     </div>
                 </div>
 
-                {/* 4. Active Sensors */}
+                {/* 4. Sensors */}
                 <div className="bg-white border-2 border-black p-6">
-                    <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Shield size={18}/> Sensor & Permission</h3>
-                    
-                    {/* Geolocation */}
+                    <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Shield size={18}/> Sensors</h3>
                     <div className="mb-4">
-                        <div className="flex justify-between text-xs font-bold mb-1">
-                            <span>Geolocation</span>
-                            <span className={geo.lat === 'Blocked' ? 'text-red-500' : 'text-green-600'}>{geo.lat} / {geo.lng}</span>
-                        </div>
-                        <Button onClick={fetchGeo} variant="secondary" className="w-full text-xs py-1 h-auto">Ping Location</Button>
+                        <div className="flex justify-between text-xs font-bold mb-1"><span>Geo</span><span>{geo.lat}</span></div>
+                        <Button onClick={fetchGeo} variant="secondary" className="w-full text-xs py-1 h-auto">Ping</Button>
                     </div>
-
-                    {/* Permission Status */}
                     <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="bg-gray-100 p-2 border border-black">
-                            <Camera size={16} className="mx-auto mb-1"/>
-                            <div className="text-[10px] font-bold uppercase">{permissions.cam}</div>
-                        </div>
-                        <div className="bg-gray-100 p-2 border border-black">
-                            <Speaker size={16} className="mx-auto mb-1"/>
-                            <div className="text-[10px] font-bold uppercase">{permissions.mic}</div>
-                        </div>
-                        <div className="bg-gray-100 p-2 border border-black">
-                            <MapPin size={16} className="mx-auto mb-1"/>
-                            <div className="text-[10px] font-bold uppercase">{permissions.loc}</div>
-                        </div>
+                        <div className="bg-gray-100 p-2 border border-black"><Camera size={16} className="mx-auto mb-1"/><div className="text-[10px]">{permissions.cam}</div></div>
+                        <div className="bg-gray-100 p-2 border border-black"><Speaker size={16} className="mx-auto mb-1"/><div className="text-[10px]">{permissions.mic}</div></div>
+                        <div className="bg-gray-100 p-2 border border-black"><MapPin size={16} className="mx-auto mb-1"/><div className="text-[10px]">{permissions.loc}</div></div>
                     </div>
-                    <Button onClick={checkPermissions} className="w-full mt-2 text-xs py-1 h-auto bg-black text-white">Scan Permissions</Button>
+                    <Button onClick={checkPermissions} className="w-full mt-2 text-xs py-1 h-auto bg-black text-white">Scan</Button>
                 </div>
-
             </div>
+
+            {/* DEEP SYSTEM TELEMETRY */}
+            <div className="bg-black text-green-400 p-6 border-2 border-black font-mono text-xs overflow-x-auto">
+                 <h3 className="font-black uppercase mb-4 text-white text-lg flex items-center gap-2">
+                     <Terminal size={20}/> Deep System Telemetry
+                 </h3>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-2">
+                     
+                     <div className="col-span-2 md:col-span-4 border-b border-gray-800 pb-1 mb-2 text-white font-bold mt-2">GRAPHICS & MEDIA</div>
+                     <div className="flex justify-between"><span>Max Texture:</span> <span>{deepScan.maxTextureSize}px</span></div>
+                     <div className="flex justify-between"><span>Line Width:</span> <span>{deepScan.aliasedLineRange}</span></div>
+                     <div className="flex justify-between"><span>Color Depth:</span> <span>{deepScan.colorDepth}-bit</span></div>
+                     <div className="flex justify-between"><span>Audio Sample:</span> <span>{deepScan.sampleRate}Hz</span></div>
+
+                     <div className="col-span-2 md:col-span-4 border-b border-gray-800 pb-1 mb-2 text-white font-bold mt-4">NETWORK & POWER</div>
+                     <div className="flex justify-between"><span>Downlink:</span> <span>{deepScan.downlink}</span></div>
+                     <div className="flex justify-between"><span>RTT:</span> <span>{deepScan.rtt}</span></div>
+                     <div className="flex justify-between"><span>Vendor:</span> <span>{deepScan.vendor || 'N/A'}</span></div>
+                     <div className="flex justify-between"><span>Charging:</span> <span>{deepScan.chargeTime}</span></div>
+                     
+                     <div className="col-span-2 md:col-span-4 border-b border-gray-800 pb-1 mb-2 text-white font-bold mt-4">API SUPPORT</div>
+                     <div className="flex items-center gap-2">{deepScan.bluetooth ? <CheckC/> : <XC/>} Bluetooth</div>
+                     <div className="flex items-center gap-2">{deepScan.usb ? <CheckC/> : <XC/>} WebUSB</div>
+                     <div className="flex items-center gap-2">{deepScan.gamepad ? <CheckC/> : <XC/>} Gamepad</div>
+                     <div className="flex items-center gap-2">{deepScan.vr ? <CheckC/> : <XC/>} WebXR (VR)</div>
+                     <div className="flex items-center gap-2">{deepScan.midi ? <CheckC/> : <XC/>} WebMIDI</div>
+                     <div className="flex items-center gap-2">{deepScan.wakeLock ? <CheckC/> : <XC/>} Wake Lock</div>
+
+                     <div className="col-span-2 md:col-span-4 border-b border-gray-800 pb-1 mb-2 text-white font-bold mt-4">STORAGE</div>
+                     <div className="flex items-center gap-2">{deepScan.webWorkers ? <CheckC/> : <XC/>} Workers</div>
+                     <div className="flex items-center gap-2">{deepScan.serviceWorker ? <CheckC/> : <XC/>} Service Worker</div>
+                     <div className="flex items-center gap-2">{deepScan.indexedDB ? <CheckC/> : <XC/>} IndexedDB</div>
+                     <div className="flex items-center gap-2">{deepScan.localStorage ? <CheckC/> : <XC/>} Local Storage</div>
+                 </div>
+            </div>
+
           </div>
 
-          {/* RIGHT COLUMN: ACTIONS & TOOLS */}
+          {/* RIGHT: TOOLS */}
           <div className="flex flex-col gap-6">
-             
-             {/* 1. PANIC BUTTON */}
              <div className="bg-red-50 border-2 border-black p-6">
-              <h3 className="font-black uppercase text-red-600 text-xl mb-2 flex items-center gap-2">
-                <AlertOctagon /> Emergency
-              </h3>
-              <p className="text-xs font-bold text-red-800 mb-6">
-                Triggering this will alert the Sentinel Response Team via WhatsApp API immediately.
-              </p>
-              <Button 
-                onClick={triggerLockdown} 
-                variant="danger" 
-                className="w-full py-4 text-lg"
-              >
-                {lockdownStatus === 'active' ? 'TRIGGER LOCKDOWN' : 'ALERT SENT'}
-              </Button>
+              <h3 className="font-black uppercase text-red-600 text-xl mb-2 flex items-center gap-2"><AlertOctagon /> Emergency</h3>
+              <Button onClick={triggerLockdown} variant="danger" className="w-full py-4 text-lg">TRIGGER LOCKDOWN</Button>
             </div>
 
-            {/* 2. HONEYFILE */}
             <div className="bg-white border-2 border-black p-6">
-              <h3 className="font-black uppercase mb-4 flex items-center gap-2">
-                <FileText /> Trap File Gen
-              </h3>
-              <p className="text-xs text-gray-600 mb-4">
-                Generates a unique <span className="font-mono bg-gray-200 px-1">.txt</span> blob. Place it on desktop.
-              </p>
+              <h3 className="font-black uppercase mb-4 flex items-center gap-2"><FileText /> Trap File</h3>
               <Button onClick={downloadHoneyfile} variant="secondary" className="w-full text-xs">Generate Honeyfile</Button>
             </div>
             
-            {/* 3. QUICK TOOLS */}
             <div className="bg-gray-50 border-2 border-black p-6">
-              <h3 className="font-black uppercase mb-4 text-sm tracking-widest text-gray-500">Security Tools</h3>
+              <h3 className="font-black uppercase mb-4 text-sm tracking-widest text-gray-500">Quick Tools</h3>
               <div className="grid grid-cols-2 gap-2">
-                  <Button onClick={clearClipboard} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto">
-                      <Scissors size={20} className="mb-1"/> Wipe Clip
-                  </Button>
-                  <Button onClick={toggleFullScreen} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto">
-                      <Maximize size={20} className="mb-1"/> {isFullScreen ? 'Exit Full' : 'Focus Mode'}
-                  </Button>
-                  <Button onClick={() => navigate('/tools/file-encrypt')} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto">
-                      <Lock size={20} className="mb-1"/> Encrypt
-                  </Button>
-                  <Button onClick={() => navigate('/tools/ip-lookup')} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto">
-                      <Eye size={20} className="mb-1"/> IP Scan
-                  </Button>
-                  <Button onClick={testVibration} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto">
-                      <Smartphone size={20} className="mb-1"/> Vibrate
-                  </Button>
-                  <Button onClick={() => alert(`History Length: ${historyLen}`)} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto">
-                      <Layers size={20} className="mb-1"/> History
-                  </Button>
+                  <Button onClick={clearClipboard} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto"><Scissors size={20} className="mb-1"/> Wipe</Button>
+                  <Button onClick={toggleFullScreen} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto"><Maximize size={20} className="mb-1"/> Focus</Button>
+                  <Button onClick={() => navigate('/tools/file-encrypt')} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto"><Lock size={20} className="mb-1"/> Encrypt</Button>
+                  <Button onClick={() => navigate('/tools/ip-lookup')} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto"><Eye size={20} className="mb-1"/> IP Scan</Button>
+                  <Button onClick={testVibration} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto"><Smartphone size={20} className="mb-1"/> Vibrate</Button>
+                  <Button onClick={() => alert(`History Length: ${historyLen}`)} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto"><Layers size={20} className="mb-1"/> History</Button>
               </div>
-            </div>
-
-            {/* 4. SUPPORT */}
-            <div className="bg-blue-600 text-white border-2 border-black p-6">
-              <h3 className="font-black uppercase mb-2">24/7 Hotline</h3>
-              <p className="text-2xl font-black mb-1">+91 83290 04424</p>
-              <p className="text-xs opacity-80">Available for WhatsApp Video Audit</p>
             </div>
           </div>
         </div>
@@ -554,5 +539,8 @@ const Dashboard = () => {
     </div>
   );
 };
+
+const CheckC = () => <span className="text-green-500 font-bold">[ON]</span>;
+const XC = () => <span className="text-red-500 font-bold">[OFF]</span>;
 
 export default Dashboard;

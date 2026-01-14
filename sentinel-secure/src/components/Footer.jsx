@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Mail, Phone, MapPin } from 'lucide-react';
+import { Shield, Mail, Phone, MapPin, Github, Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => (
@@ -15,9 +15,18 @@ const Footer = () => (
           Advanced ransomware defense tailored for Indian SMEs. Local monitoring, instant response, and affordable security.
         </p>
         <div className="space-y-2 text-sm font-bold text-gray-300">
-            <div className="flex items-center gap-2"><Mail size={16} className="text-blue-600"/> contact.aa@tuta.io</div>
-            <div className="flex items-center gap-2"><Phone size={16} className="text-blue-600"/> +91 83290 04424</div>
-            <div className="flex items-center gap-2"><MapPin size={16} className="text-blue-600"/> Baner, Pune</div>
+            <div className="flex items-center gap-2">
+              <Mail size={16} className="text-blue-600"/> 
+              ask.sentinel@tuta.io
+            </div>
+            <div className="flex items-center gap-2">
+              <Phone size={16} className="text-blue-600"/> 
+              Developer: +91 83290 04424
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-blue-600"/> 
+              Baner, Pune
+            </div>
         </div>
       </div>
       
@@ -56,6 +65,7 @@ const Footer = () => (
           <li><Link to="/disclaimer" className="hover:text-white">Disclaimer</Link></li>
           <li><Link to="/refund-policy" className="hover:text-white">Refund Policy</Link></li>
           <li><Link to="/acceptable-use" className="hover:text-white">Acceptable Use Policy</Link></li>
+          <li><Link to="/cookie-policy" className="hover:text-white">Cookie Policy</Link></li>
         </ul>
         <div className="mt-8">
             <Link to="/signup" className="px-6 py-3 border-2 border-white font-bold uppercase hover:bg-white hover:text-black transition-colors block text-center">
@@ -67,9 +77,15 @@ const Footer = () => (
     
     <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
       <p>© 2026 Sentinel Secure. Developed by Arun Ammisetty.</p>
-      <div className="flex gap-4 mt-4 md:mt-0">
-        <a href="https://github.com/aammisetty" className="hover:text-white">GitHub</a>
-        <a href="https://linkedin.com/in/arun-ammisetty" className="hover:text-white">LinkedIn</a>
+      
+      {/* Social Icons */}
+      <div className="flex gap-6 mt-4 md:mt-0">
+        <a href="https://github.com/aammisetty" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
+          <Github size={20} />
+        </a>
+        <a href="https://linkedin.com/in/arun-ammisetty" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
+          <Linkedin size={20} />
+        </a>
       </div>
     </div>
   </footer>
