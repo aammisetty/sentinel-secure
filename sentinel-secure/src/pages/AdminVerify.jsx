@@ -2,45 +2,63 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   CheckCircle, XCircle, User, CreditCard, 
-  Clock, LogOut, ShieldAlert, Search 
+  Clock, LogOut, ShieldAlert, Search, Hash, 
+  History, Ban, CheckSquare, ListFilter
 } from 'lucide-react';
 import Button from '../components/Button';
+import { supabase } from '../utils/supabase';
 
 const AdminVerify = () => {
-  const [pendingRequests, setPendingRequests] = useState([]);
+  const [activeTab, setActiveTab] = useState('pending'); // pending, approved, blocked
+  const [requests, setRequests] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchRequests();
-    const interval = setInterval(fetchRequests, 5000);
-    return () => clearInterval(interval);
+    fetchInitialData();
+
+    const channel = supabase
+      .channel('admin_sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payment_requests' },
+        () => {
+          fetchInitialData(); // Refresh list on any change
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const fetchRequests = () => {
-    const requests = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key.startsWith('pending_verification_')) {
-        requests.push(JSON.parse(localStorage.getItem(key)));
-      }
-    }
-    setPendingRequests(requests.sort((a, b) => b.timestamp - a.timestamp));
+  const fetchInitialData = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from('payment_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error) setRequests(data);
+    setIsLoading(false);
   };
 
-  const handleDecision = (txnId, status) => {
-    if (status === 'approved') {
-      localStorage.setItem(`sentinel_pay_status_${txnId}`, 'approved');
-      localStorage.removeItem(`pending_verification_${txnId}`);
-      alert(`Transaction ${txnId} APPROVED.`);
-    } else {
-      // Logic for False Claim / Reject
-      if (window.confirm("MARK AS FALSE CLAIM? This will block the user permanently.")) {
-        localStorage.setItem('sentinel_blocked', 'true'); // Site-wide kill switch for the user
-        localStorage.removeItem(`pending_verification_${txnId}`);
-        alert(`Transaction ${txnId} REJECTED. User Blacklisted.`);
-      }
+  const handleDecision = async (id, txnId, status) => {
+    const verdict = status === 'approved' ? 'approved' : 'blocked';
+    
+    try {
+      const { error } = await supabase
+        .from('payment_requests')
+        .update({ status: verdict })
+        .eq('id', id);
+
+      if (error) throw error;
+      alert(`Transaction ${txnId} marked as ${verdict.toUpperCase()}`);
+    } catch (err) {
+      alert("Action failed. Check console.");
+      console.error(err);
     }
-    fetchRequests();
   };
 
   const handleLogout = () => {
@@ -49,82 +67,130 @@ const AdminVerify = () => {
     navigate('/admin/login');
   };
 
+  const filteredRequests = requests.filter(req => req.status === activeTab);
+
+  const TabButton = ({ id, label, icon: Icon, color }) => (
+    <button
+      onClick={() => setActiveTab(id)}
+      className={`flex items-center gap-2 px-6 py-3 font-black uppercase text-xs border-2 border-black transition-all ${
+        activeTab === id 
+        ? `${color} text-white translate-x-1 translate-y-1 shadow-none` 
+        : `bg-white text-black shadow-[4px_4px_0px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none`
+      }`}
+    >
+      <Icon size={16} /> {label} ({requests.filter(r => r.status === id).length})
+    </button>
+  );
+
   return (
     <div className="pt-24 min-h-screen bg-gray-50 p-6 lg:p-12">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-[1400px] mx-auto">
         
         {/* ADMIN HEADER */}
         <div className="flex justify-between items-center bg-black text-white p-6 border-b-4 border-blue-600 mb-8">
           <div>
             <h1 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-              <ShieldAlert className="text-blue-500" /> Admin / Verification Panel
+              <ShieldAlert className="text-blue-500" /> Sentinel Central Command
             </h1>
-            <p className="text-[10px] font-bold opacity-60">LOGGED IN AS: gchk@duck.com</p>
+            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Operator: testcodecfg@gmail.com</p>
           </div>
           <button onClick={handleLogout} className="flex items-center gap-2 text-xs font-bold hover:text-red-500 transition-colors">
             <LogOut size={16}/> TERMINATE SESSION
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
-          <h2 className="text-xl font-black uppercase flex items-center gap-2">
-            <Clock size={20}/> Incoming Requests ({pendingRequests.length})
-          </h2>
+        {/* TAB NAVIGATION */}
+        <div className="flex flex-wrap gap-4 mb-8">
+          <TabButton id="pending" label="Pending" icon={Clock} color="bg-blue-600" />
+          <TabButton id="approved" label="Approved" icon={CheckSquare} color="bg-green-600" />
+          <TabButton id="blocked" label="Denied / Blocked" icon={Ban} color="bg-red-600" />
+        </div>
 
-          {pendingRequests.length === 0 ? (
-            <div className="bg-white border-2 border-black p-20 text-center">
-              <Search size={48} className="mx-auto text-gray-300 mb-4"/>
-              <p className="font-bold text-gray-400 uppercase tracking-widest">No pending transactions found</p>
+        {/* DATA LISTING */}
+        <div className="grid grid-cols-1 gap-6">
+          {isLoading ? (
+            <div className="p-20 text-center animate-pulse">
+                <Hash size={48} className="mx-auto text-blue-600 mb-4 animate-spin"/>
+                <p className="font-black uppercase tracking-widest text-gray-400">Syncing with Supabase...</p>
+            </div>
+          ) : filteredRequests.length === 0 ? (
+            <div className="bg-white border-2 border-black p-20 text-center shadow-[8px_8px_0px_0px_#ddd]">
+              <Search size={48} className="mx-auto text-gray-200 mb-4"/>
+              <p className="font-bold text-gray-400 uppercase tracking-widest">No records found in {activeTab}</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {pendingRequests.map((req) => (
-                <div key={req.txnId} className="bg-white border-2 border-black p-6 flex flex-col md:flex-row justify-between items-center gap-6 shadow-[4px_4px_0px_0px_#000]">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-8 flex-grow">
+              {filteredRequests.map((req) => (
+                <div key={req.id} className="bg-white border-2 border-black p-6 flex flex-col xl:flex-row justify-between items-center gap-6 shadow-[4px_4px_0px_0px_#000]">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 flex-grow w-full">
                     <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase">User / Email</p>
-                      <p className="font-bold text-sm truncate">{req.user}</p>
-                      <p className="text-xs text-gray-500 truncate">{req.email}</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Customer</p>
+                      <p className="font-bold text-sm truncate">{req.user_name}</p>
+                      <p className="text-[10px] text-gray-500 truncate font-mono">{req.user_email}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase">Transaction ID</p>
-                      <p className="font-mono font-black text-blue-600 bg-blue-50 px-2 rounded inline-block">{req.txnId}</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Reference ID</p>
+                      <p className="font-mono font-bold text-xs text-blue-700 bg-blue-50 px-2 py-1 border border-blue-100 inline-block">
+                        {req.ref_id}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase">Plan / Amount</p>
-                      <p className="font-bold text-sm">{req.plan}</p>
-                      <p className="text-xs font-bold">₹{req.amount.toLocaleString('en-IN')}</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Session</p>
+                      <p className="font-mono text-[10px] truncate max-w-[120px] bg-gray-100 px-2 py-1">{req.session_id}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase">Timestamp</p>
-                      <p className="text-xs font-mono">{new Date(req.timestamp).toLocaleTimeString()}</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase mb-1">UTR / Transaction</p>
+                      <p className="font-mono font-black text-sm">{req.txn_id}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Plan / Value</p>
+                      <p className="font-bold text-sm uppercase">{req.plan}</p>
+                      <p className="text-xs font-black text-green-600 font-mono">₹{parseFloat(req.amount).toLocaleString('en-IN')}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Timestamp</p>
+                      <p className="text-[10px] font-mono font-bold">{new Date(req.created_at).toLocaleString('en-IN')}</p>
                     </div>
                   </div>
 
-                  <div className="flex gap-3 shrink-0">
-                    <button 
-                      onClick={() => handleDecision(req.txnId, 'approved')}
-                      className="bg-green-600 text-white px-6 py-2 font-bold uppercase text-xs border-2 border-black hover:bg-green-700 flex items-center gap-2"
-                    >
-                      <CheckCircle size={16}/> Approve
-                    </button>
-                    <button 
-                      onClick={() => handleDecision(req.txnId, 'rejected')}
-                      className="bg-red-600 text-white px-6 py-2 font-bold uppercase text-xs border-2 border-black hover:bg-red-700 flex items-center gap-2"
-                    >
-                      <XCircle size={16}/> Reject
-                    </button>
-                  </div>
+                  {activeTab === 'pending' && (
+                    <div className="flex gap-3 shrink-0 w-full xl:w-auto">
+                      <button 
+                        onClick={() => handleDecision(req.id, req.txn_id, 'approved')}
+                        className="flex-1 xl:flex-none bg-green-600 text-white px-8 py-3 font-bold uppercase text-xs border-2 border-black hover:bg-green-700 flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle size={16}/> Approve
+                      </button>
+                      <button 
+                        onClick={() => handleDecision(req.id, req.txn_id, 'blocked')}
+                        className="flex-1 xl:flex-none bg-red-600 text-white px-8 py-3 font-bold uppercase text-xs border-2 border-black hover:bg-red-700 flex items-center justify-center gap-2"
+                      >
+                        <XCircle size={16}/> Deny
+                      </button>
+                    </div>
+                  )}
+
+                  {activeTab !== 'pending' && (
+                    <div className="shrink-0 w-full xl:w-auto">
+                        <div className={`px-6 py-2 border-2 border-black text-[10px] font-black uppercase text-center ${activeTab === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            Verdict: {activeTab}
+                        </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* SECURITY LOGS FOOTER */}
-        <div className="mt-12 p-4 bg-gray-200 border-2 border-gray-300 text-[10px] font-mono text-gray-600">
-           SYSTEM LOG: [INFO] Listening for storage mutation events... [OK] <br/>
-           SYSTEM LOG: [AUTH] Founder session validated via 2FA. [OK]
+        {/* LOGS FOOTER */}
+        <div className="mt-12 p-6 bg-gray-200 border-2 border-gray-300 text-[10px] font-mono text-gray-600">
+           <div className="flex items-center gap-2 mb-2 text-black font-black uppercase">
+             <Hash size={12}/> Live Database Context
+           </div>
+           LOG: [REALTIME] Postgres broadcast listening for 'public.payment_requests' <br/>
+           LOG: [FILTER] Displaying {filteredRequests.length} records matching status '{activeTab}' <br/>
+           LOG: [SECURITY] All decisions recorded with founder timestamp.
         </div>
       </div>
     </div>

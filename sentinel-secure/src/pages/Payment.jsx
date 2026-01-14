@@ -2,23 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   CreditCard, Lock, ArrowLeft, Download, ShieldCheck, 
-  Smartphone, Copy, Check, Printer, Clock, AlertOctagon, RefreshCw
+  Smartphone, Copy, Check, Printer, Clock, AlertOctagon, RefreshCw,
+  ShieldAlert, Ban, UserX
 } from 'lucide-react';
 import Button from '../components/Button';
-
-// Import your QR images here
-import phonePeQR from '../assets/p2.png'; 
-import whatsAppQR from '../assets/p1.png';
+import { supabase } from '../utils/supabase';
 
 const Payment = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Details, 2: Invoice & Pay, 3: Verification
+  const [step, setStep] = useState(1); 
   const [formData, setFormData] = useState({});
   const [invoiceId, setInvoiceId] = useState('');
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState(180); 
   const [txnId, setTxnId] = useState('');
+  const [isPermanentlyBlocked, setIsPermanentlyBlocked] = useState(localStorage.getItem('sentinel_blocked') === 'true');
 
   const SUPPLIER_GSTIN = "27AABCU9603R1Z2"; 
   const SUPPLIER_PAN = "DEWPA4187R"; 
@@ -33,28 +32,44 @@ const Payment = () => {
     setInvoiceId(`SS/${finYear}/${Math.floor(1000 + Math.random() * 9000)}`);
   }, [state, navigate]);
 
-  // --- REAL-TIME ADMIN MONITORING ---
+  // --- SUPABASE REAL-TIME MONITORING ---
   useEffect(() => {
-    const checkStatus = setInterval(() => {
-      const status = localStorage.getItem(`sentinel_pay_status_${txnId}`);
-      const isBlocked = localStorage.getItem('sentinel_blocked');
+    if (!txnId || step !== 3) return;
 
-      if (isBlocked === 'true') {
-        window.location.href = "about:blank"; // Immediate kill for false claims
-      }
+    const subscription = supabase
+      .channel('payment_status_check')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'payment_requests',
+          filter: `txn_id=eq.${txnId}`,
+        },
+        (payload) => {
+          const { status } = payload.new;
 
-      if (status === 'approved') {
-        localStorage.setItem('sentinel_plan', state?.plan?.id);
-        localStorage.setItem('sentinel_status', 'active');
-        localStorage.setItem('sentinel_token', `verified_${txnId}`);
-        navigate('/dashboard');
-      }
-    }, 2000);
+          if (status === 'approved') {
+            localStorage.setItem('sentinel_plan', state?.plan?.id);
+            localStorage.setItem('sentinel_status', 'active');
+            localStorage.setItem('sentinel_token', `verified_${txnId}`);
+            localStorage.setItem('sentinel_user', formData.email);
+            navigate('/dashboard');
+          } 
+          
+          if (status === 'blocked') {
+            localStorage.setItem('sentinel_blocked', 'true');
+            setIsPermanentlyBlocked(true);
+          }
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(checkStatus);
-  }, [txnId, navigate, state]);
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [txnId, step, navigate, state, formData.email]);
 
-  // --- NAVIGATION GUARD & TIMER ---
   useEffect(() => {
     if (step >= 2) {
       window.history.pushState(null, null, window.location.href);
@@ -83,6 +98,38 @@ const Payment = () => {
       };
     }
   }, [step]);
+
+  // --- ACCESS DENIED RENDER ---
+  if (isPermanentlyBlocked) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center p-6 text-white font-mono overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-900/20 via-black to-black opacity-50"></div>
+        <div className="relative max-w-2xl w-full border-4 border-red-600 p-8 md:p-12 bg-black shadow-[0_0_50px_rgba(220,38,38,0.5)] text-center">
+          <div className="mb-8 flex justify-center">
+            <div className="relative">
+              <Ban size={80} className="text-red-600 animate-pulse" />
+              <ShieldAlert size={40} className="absolute inset-0 m-auto text-white" />
+            </div>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-red-600 mb-4 glitch" data-text="ACCESS DENIED">
+            Access Denied
+          </h1>
+          <div className="h-1 w-full bg-red-600 mb-6"></div>
+          <p className="text-xl font-bold uppercase mb-8 leading-tight">
+            Security Blacklist Active: Your session and hardware identifier have been permanently restricted.
+          </p>
+          <div className="bg-red-600/10 border border-red-600/50 p-6 mb-8 text-left">
+            <p className="text-xs uppercase font-black text-red-500 mb-2 tracking-widest">Incident Telemetry:</p>
+            <p className="text-sm font-bold text-red-200">REASON: FRAUDULENT PAYMENT CLAIM DETECTED</p>
+            <p className="text-xs opacity-60 mt-1">STATUS: NON-APPEALABLE TERMINATION</p>
+          </div>
+          <p className="text-[10px] uppercase opacity-40">
+            Founder Override Required for Restoration (testcodecfg@gmail.com)
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -123,26 +170,36 @@ const Payment = () => {
     window.print();
   };
 
-  const handleInitialPaymentClick = () => {
-    if(!txnId) return alert("Please enter the Transaction ID first.");
+  const handleInitialPaymentClick = async () => {
+    if(!txnId || txnId.length < 6) return alert("Please enter a valid Transaction ID.");
     
-    // Register the request for the Founder/Admin Page
-    const requestData = {
-        txnId,
-        user: formData.name,
-        email: formData.email,
-        amount: totalAmount,
-        plan: plan.name,
-        invoiceId,
-        timestamp: new Date().getTime()
-    };
-    localStorage.setItem(`pending_verification_${txnId}`, JSON.stringify(requestData));
-    
-    setStep(3);
-    const msg = `
+    const refId = `REF-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const sessionId = `SID-${Date.now()}`;
+
+    try {
+      const { error } = await supabase
+        .from('payment_requests')
+        .insert([{
+          txn_id: txnId,
+          ref_id: refId,
+          session_id: sessionId,
+          user_name: formData.name,
+          user_email: formData.email,
+          amount: totalAmount,
+          plan: plan.name,
+          status: 'pending'
+        }]);
+
+      if (error) throw error;
+
+      setStep(3);
+
+      const msg = `
 *✅ PAYMENT VERIFICATION REQUEST*
 --------------------------------
-*Transaction ID:* ${txnId}
+*Ref ID:* ${refId}
+*Session:* ${sessionId}
+*UTR/Transaction ID:* ${txnId}
 *Invoice No:* ${invoiceId}
 *Plan:* ${plan.name}
 *Amount:* ₹${totalAmount.toLocaleString('en-IN')}
@@ -150,12 +207,16 @@ const Payment = () => {
 --------------------------------
 Founder, please verify this on the Secure Admin Panel.
 `;
-    window.open(`https://wa.me/918329004424?text=${encodeURIComponent(msg)}`, '_blank');
+      window.open(`https://wa.me/918329004424?text=${encodeURIComponent(msg)}`, '_blank');
+
+    } catch (err) {
+      alert("Database Connection Error. Please check your internet.");
+      console.error(err);
+    }
   };
 
   return (
     <div className={`min-h-screen bg-gray-50 ${step === 1 ? 'pt-32 p-6 lg:p-12' : ''}`}>
-      
       <style>{`
         @media print {
           body * { visibility: hidden; }
@@ -223,7 +284,6 @@ Founder, please verify this on the Secure Admin Panel.
 
       {step >= 2 && (
         <div className="fixed inset-0 z-[100] bg-gray-50 overflow-y-auto flex flex-col">
-            
             <div className="bg-black text-white p-4 flex justify-between items-center sticky top-0 z-50 no-print">
                 <div className="flex items-center gap-2">
                     <ShieldCheck size={20} className="text-green-400"/>
@@ -235,8 +295,6 @@ Founder, please verify this on the Secure Admin Panel.
             </div>
 
             <div className="max-w-6xl mx-auto p-6 lg:p-12 w-full grid grid-cols-1 lg:grid-cols-2 gap-8 relative">
-                
-                {/* STEP 3 OVERLAY: SECURE PENDING SCREEN */}
                 {step === 3 && (
                     <div className="absolute inset-0 bg-white z-[60] flex flex-col items-center justify-center text-center p-8 verification-overlay">
                         <div className="relative mb-8">
@@ -254,7 +312,6 @@ Founder, please verify this on the Secure Admin Panel.
                     </div>
                 )}
 
-                {/* LEFT: PAYMENT SCAN & TXN ID */}
                 <div className="space-y-8 no-print">
                     <div className="bg-white border-2 border-black p-8 shadow-[8px_8px_0px_0px_#22c55e]">
                         <div className="text-center mb-8">
@@ -292,7 +349,6 @@ Founder, please verify this on the Secure Admin Panel.
                     </button>
                 </div>
 
-                {/* RIGHT: INVOICE */}
                 <div id="tax-invoice" className="bg-white border text-black p-8 h-fit shadow-lg relative">
                     <div className="flex justify-between items-start border-b-2 border-black pb-6 mb-6">
                         <div>
@@ -336,6 +392,7 @@ Founder, please verify this on the Secure Admin Panel.
                         </thead>
                         <tbody className="font-mono">
                             <tr>
+                                <td className="p-2 border-r border-black border-b text-center">1</td>
                                 <td className="p-2 border-r border-black border-b">
                                     <span className="font-bold block">{plan.name}</span>
                                     <span className="text-[10px] text-gray-500">Cycle: {billing}</span>

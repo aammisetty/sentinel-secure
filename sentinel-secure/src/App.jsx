@@ -71,7 +71,8 @@ const AdminGuard = ({ children }) => {
   const adminEmail = localStorage.getItem('sentinel_admin_email');
   const isVerified2FA = localStorage.getItem('sentinel_admin_2fa') === 'true';
 
-  if (adminEmail !== 'gchk@duck.com' || !isVerified2FA) {
+  // Updated check for the specific Gmail address
+  if (adminEmail !== 'testcodecfg@gmail.com' || !isVerified2FA) {
     return <Navigate to="/admin/login" replace />;
   }
   return children;

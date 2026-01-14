@@ -10,7 +10,8 @@ const Header = () => {
   // -- ACCESS CONTROL LOGIC --
   const userPlan = localStorage.getItem('sentinel_plan') || 'free'; 
   const isBlocked = localStorage.getItem('sentinel_blocked') === 'true';
-  const isAdmin = localStorage.getItem('sentinel_admin_email') === 'gchk@duck.com' && localStorage.getItem('sentinel_admin_2fa') === 'true';
+  // Updated Admin Check to testcodecfg@gmail.com
+  const isAdmin = localStorage.getItem('sentinel_admin_email') === 'testcodecfg@gmail.com' && localStorage.getItem('sentinel_admin_2fa') === 'true';
   
   const isLocked = (requiredPlan) => {
     const levels = { 'free': 0, 'starter': 1, 'pro': 2, 'business': 3 };
@@ -62,7 +63,7 @@ const Header = () => {
       ) : (
         <>
           {/* DESKTOP NAVIGATION */}
-          <div className="hidden lg:flex gap-6 font-bold text-sm uppercase tracking-widest items-center">
+          <div className="hidden lg:flex gap-6 font-bold text-sm uppercase tracking-widest items-center text-black">
             <Link to="/" className={`hover:text-blue-600 ${isActive('/')}`}>Home</Link>
             
             {/* TOOLS DROPDOWN */}
@@ -125,14 +126,14 @@ const Header = () => {
           </div>
 
           {/* MOBILE TOGGLE */}
-          <button className="lg:hidden z-50" onClick={() => setIsOpen(!isOpen)}>
+          <button className="lg:hidden z-50 text-black" onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? <X size={32} /> : <Menu size={32} />}
           </button>
 
           {/* MOBILE MENU */}
           {isOpen && (
             <div className="absolute top-20 left-0 w-full h-[calc(100vh-80px)] overflow-y-auto bg-white border-t-2 border-black p-8 flex flex-col gap-8 z-40 pb-32 text-black">
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 text-black">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Main</p>
                 <Link to="/" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Home</Link>
                 {isAdmin && <Link to="/admin/verify" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase text-yellow-600">Founder Verification</Link>}
@@ -142,7 +143,7 @@ const Header = () => {
 
               <div className="h-px bg-gray-200"></div>
 
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 text-black">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Advanced Tools</p>
                 <Link to="/tools/file-encrypt" onClick={() => setIsOpen(false)} className="text-lg font-bold text-green-600">AES File Vault</Link>
                 <Link to="/tools/webrtc-leak" onClick={() => setIsOpen(false)} className="text-lg font-bold text-green-600">WebRTC Leak Check</Link>
