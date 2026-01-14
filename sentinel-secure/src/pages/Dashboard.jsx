@@ -14,7 +14,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   
-  // -- PLAN ACCESS LOGIC --
+  // -- BLOCK & PLAN ACCESS LOGIC --
+  const isBlocked = localStorage.getItem('sentinel_blocked') === 'true';
   const userPlan = (localStorage.getItem('sentinel_plan') || 'free').toLowerCase();
   const planLevel = { 'free': 0, 'starter': 1, 'pro': 2, 'business': 3 }[userPlan] || 0;
 
@@ -54,7 +55,7 @@ const Dashboard = () => {
   const [isStealth, setIsStealth] = useState(false);
   const [wakeLockObj, setWakeLockObj] = useState(null);
 
-  // -- NEW STATE: DEEP TELEMETRY --
+  // -- STATE: DEEP TELEMETRY --
   const [deepScan, setDeepScan] = useState({
     maxTextureSize: 0, maxRenderBuffer: 0, aliasedLineRange: 'N/A',
     sampleRate: 0, channelCount: 0,
@@ -77,16 +78,23 @@ const Dashboard = () => {
   const [showIdleWarning, setShowIdleWarning] = useState(false);
   const IDLE_LIMIT = 60; // 60 seconds
 
-  // 1. AUTH CHECK
+  // 1. AUTH & BLOCK INTERCEPTOR
   useEffect(() => {
+    if (isBlocked) {
+        // Abort all initialization if user is blacklisted
+        return;
+    }
+
     const token = localStorage.getItem('sentinel_token');
     const email = localStorage.getItem('sentinel_user');
     if (!token) navigate('/login');
     else setUser(email);
-  }, [navigate]);
+  }, [navigate, isBlocked]);
 
   // 2. SESSION & IDLE TIMER
   useEffect(() => {
+    if (isBlocked) return;
+
     const timer = setInterval(() => {
         setSessionTime(t => t + 1);
         setIdleTime(t => t + 1);
@@ -109,20 +117,23 @@ const Dashboard = () => {
         window.removeEventListener('scroll', resetIdle);
         window.removeEventListener('click', resetIdle);
     };
-  }, []);
+  }, [isBlocked]);
 
   // 3. IDLE LOGIC
   useEffect(() => {
+      if (isBlocked) return;
       if (idleTime >= IDLE_LIMIT) {
           localStorage.removeItem('sentinel_token');
           navigate('/login');
       } else if (idleTime >= IDLE_LIMIT - 10) {
           setShowIdleWarning(true);
       }
-  }, [idleTime, navigate]);
+  }, [idleTime, navigate, isBlocked]);
 
   // 4. LISTENERS & SCANS
   useEffect(() => {
+    if (isBlocked) return;
+
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
     window.addEventListener('online', handleOnline);
@@ -193,9 +204,10 @@ const Dashboard = () => {
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('deviceorientation', handleOrientation);
     };
-  }, []);
+  }, [isBlocked]);
 
   const runDeepScan = async () => {
+    if (isBlocked) return; // Abort Scan
     let scanData = {};
 
     try {
@@ -240,26 +252,22 @@ const Dashboard = () => {
 
     scanData.colorDepth = window.screen.colorDepth;
     scanData.pixelRatio = window.devicePixelRatio;
-
     scanData.bluetooth = 'bluetooth' in navigator;
     scanData.usb = 'usb' in navigator;
     scanData.gamepad = 'getGamepads' in navigator;
     scanData.vr = 'xr' in navigator;
     scanData.midi = 'requestMIDIAccess' in navigator;
-    
     scanData.webWorkers = typeof Worker !== 'undefined';
     scanData.sharedWorkers = typeof SharedWorker !== 'undefined';
     scanData.serviceWorker = 'serviceWorker' in navigator;
     scanData.indexedDB = 'indexedDB' in window;
     scanData.localStorage = 'localStorage' in window;
     scanData.sessionStorage = 'sessionStorage' in window;
-
     scanData.paymentAPI = 'PaymentRequest' in window;
     scanData.credentialsAPI = 'credentials' in navigator;
     scanData.wakeLock = 'wakeLock' in navigator;
     scanData.emeSupport = 'requestMediaKeySystemAccess' in navigator;
     scanData.pipSupport = 'pictureInPictureEnabled' in document;
-
     scanData.vendor = navigator.vendor;
     scanData.javaEnabled = navigator.javaEnabled ? navigator.javaEnabled() : false;
 
@@ -267,6 +275,7 @@ const Dashboard = () => {
   };
 
   const fetchGeo = () => {
+    if (isBlocked) return;
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setGeo({ lat: pos.coords.latitude.toFixed(4), lng: pos.coords.longitude.toFixed(4) }),
@@ -276,6 +285,7 @@ const Dashboard = () => {
   };
 
   const checkPermissions = async () => {
+    if (isBlocked) return;
     try {
         const c = await navigator.permissions.query({ name: 'camera' });
         const m = await navigator.permissions.query({ name: 'microphone' });
@@ -307,6 +317,7 @@ const Dashboard = () => {
   };
 
   const handleFileUpload = async (e) => {
+    if (isBlocked) return alert("System Blacklisted. Action Aborted.");
     setIsProcessing(true);
     const uploaded = Array.from(e.target.files);
     
@@ -332,6 +343,7 @@ const Dashboard = () => {
   };
 
   const triggerLockdown = () => {
+    if (isBlocked) return;
     if (window.confirm("ARE YOU SURE? This will alert the support team.")) {
       setLockdownStatus('locked');
       const msg = encodeURIComponent(`🚨 EMERGENCY: RANSOMWARE DETECTED.\nUser: ${user}\nAction: IMMEDIATE LOCKDOWN REQUEST.`);
@@ -340,55 +352,48 @@ const Dashboard = () => {
   };
 
   const downloadHoneyfile = () => {
+    if (isBlocked) return;
     const blob = new Blob(["SENTINEL HONEYPOT FILE\nDO NOT MODIFY."], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'passwords_do_not_open.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    a.href = url; a.download = 'passwords_do_not_open.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
   const poisonClipboard = async () => {
+      if (isBlocked) return;
       try {
           await navigator.clipboard.writeText('FAKE_PASSWORD_12345_DO_NOT_USE');
           alert('Clipboard Poisoned with Fake Data');
-      } catch (err) {
-          alert('Failed');
-      }
+      } catch (err) { alert('Failed'); }
   };
 
   const clearClipboard = async () => {
+    if (isBlocked) return;
     try {
       await navigator.clipboard.writeText('');
       alert('Clipboard Wiped Successfully');
-    } catch (err) {
-      alert('Failed to access clipboard');
-    }
+    } catch (err) { alert('Failed to access clipboard'); }
   };
 
   const toggleFullScreen = () => {
+    if (isBlocked) return;
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
       setIsFullScreen(true);
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-        setIsFullScreen(false);
-      }
+      if (document.exitFullscreen) { document.exitFullscreen(); setIsFullScreen(false); }
     }
   };
 
   const testVibration = () => {
-      if(navigator.vibrate) {
-          navigator.vibrate([200, 100, 200]);
-      } else {
-          alert("Vibration API not supported.");
-      }
+      if (isBlocked) return;
+      if(navigator.vibrate) { navigator.vibrate([200, 100, 200]); }
+      else { alert("Vibration API not supported."); }
   };
 
   const testNetworkSpeed = () => {
+      if (isBlocked) return;
       setSpeed('Testing...');
       const startTime = new Date().getTime();
       const img = new Image();
@@ -404,6 +409,7 @@ const Dashboard = () => {
   };
 
   const checkWebRTCLeak = () => {
+      if (isBlocked) return;
       setLocalIP('Scanning...');
       const pc = new RTCPeerConnection({iceServers: []});
       pc.createDataChannel("");
@@ -416,12 +422,11 @@ const Dashboard = () => {
               pc.close();
           }
       };
-      setTimeout(() => {
-          if(localIP === 'Scanning...') setLocalIP('Not Found (Secure)');
-      }, 2000);
+      setTimeout(() => { if(localIP === 'Scanning...') setLocalIP('Not Found (Secure)'); }, 2000);
   };
 
   const toggleStealth = () => {
+      if (isBlocked) return;
       if (!isStealth) {
           document.title = "Untitled document - Google Docs";
           const link = document.querySelector("link[rel~='icon']");
@@ -434,53 +439,50 @@ const Dashboard = () => {
   };
 
   const toggleWakeLock = async () => {
+      if (isBlocked) return;
       if ('wakeLock' in navigator) {
           if (!wakeLockObj) {
               try {
                   const wl = await navigator.wakeLock.request('screen');
                   setWakeLockObj(wl);
                   alert("Screen Wake Lock Active");
-              } catch (err) {
-                  alert(`Wake Lock Failed: ${err.name}`);
-              }
+              } catch (err) { alert(`Wake Lock Failed: ${err.name}`); }
           } else {
-              wakeLockObj.release();
-              setWakeLockObj(null);
+              wakeLockObj.release(); setWakeLockObj(null);
               alert("Screen Wake Lock Released");
           }
       }
   };
 
   const pingNetwork = async () => {
+      if (isBlocked) return;
       setLatency('Pinging...');
       const start = Date.now();
       try {
           await fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', cache: 'no-store' });
           const end = Date.now();
           setLatency(`${end - start} ms`);
-      } catch (e) {
-          setLatency('Error');
-      }
+      } catch (e) { setLatency('Error'); }
   };
 
   const stressMemory = () => {
+      if (isBlocked) return;
       try {
           const arr = new Array(10000000).fill(Math.random());
           alert(`Memory Stress Test: Allocated ${arr.length} integers.`);
-      } catch(e) {
-          alert("Memory Allocation Failed (System Safe)");
-      }
+      } catch(e) { alert("Memory Allocation Failed (System Safe)"); }
   };
 
   const lockSession = () => navigate('/login');
-
   const formatTime = (s) => {
-    const mins = Math.floor(s / 60);
-    const secs = s % 60;
+    const mins = Math.floor(s / 60); const secs = s % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   const toggleDarkMode = () => setDarkMode(!darkMode);
+
+  // Fallback if App.jsx Global Guard hasn't caught the block yet
+  if (isBlocked) return null;
 
   return (
     <div className={`pt-80 min-h-screen p-4 lg:p-8 transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
@@ -497,8 +499,7 @@ const Dashboard = () => {
       )}
 
       <div className="max-w-7xl mx-auto">
-        
-        <div className={`flex flex-col md:flex-row justify-between items-end mb-8 p-6 border-2 border-black neo-shadow mt-8 ${darkMode ? 'bg-gray-800 border-white' : 'bg-white'}`}>
+        <div className={`flex flex-col md:flex-row justify-between items-end mb-8 p-6 border-2 border-black neo-shadow mt-8 ${darkMode ? 'bg-gray-800 border-white' : 'bg-white border-black'}`}>
           <div>
             <div className="flex items-center gap-3">
                <h1 className="text-3xl font-black uppercase tracking-tighter">Command Center</h1>
@@ -508,13 +509,8 @@ const Dashboard = () => {
                 <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 ${darkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>
                     <User size={12} /> {user || 'Authenticated User'}
                 </div>
-                <div className="text-xs font-mono opacity-70">
-                    Session: {formatTime(sessionTime)}
-                </div>
-                {/* PLAN BADGE */}
-                <div className="text-[10px] font-black uppercase bg-blue-600 text-white px-2 py-1">
-                    Level: {userPlan}
-                </div>
+                <div className="text-xs font-mono opacity-70">Session: {formatTime(sessionTime)}</div>
+                <div className="text-[10px] font-black uppercase bg-blue-600 text-white px-2 py-1">Level: {userPlan}</div>
             </div>
           </div>
           <div className="mt-4 md:mt-0 flex gap-4">
@@ -536,22 +532,16 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
           <div className="lg:col-span-2 flex flex-col gap-6">
-            
             <div className={`border-2 p-6 ${darkMode ? 'bg-gray-800 border-white' : 'bg-white border-black'}`}>
-              <h2 className="font-black uppercase text-xl mb-4 flex items-center gap-2">
-                <Binary className="text-blue-500" /> Deep File Forensics
-              </h2>
+              <h2 className="font-black uppercase text-xl mb-4 flex items-center gap-2"><Binary className="text-blue-500" /> Deep File Forensics</h2>
               <div className={`relative border-2 border-dashed p-12 text-center transition-colors group cursor-pointer ${darkMode ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 bg-gray-50 hover:bg-blue-50'}`}>
                 <input type="file" multiple onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"/>
                 <Upload className={`mx-auto mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-400 group-hover:text-blue-600'}`} size={32} />
                 <p className={`font-bold uppercase ${darkMode ? 'text-gray-300' : 'text-gray-500 group-hover:text-blue-600'}`}>Drop Files to Analyze</p>
               </div>
               {isProcessing && (
-                <div className="mt-4 p-4 bg-yellow-100 border-2 border-yellow-400 flex items-center gap-2 text-yellow-800 font-bold animate-pulse">
-                  <RefreshCw className="animate-spin" /> Processing...
-                </div>
+                <div className="mt-4 p-4 bg-yellow-100 border-2 border-yellow-400 flex items-center gap-2 text-yellow-800 font-bold animate-pulse"><RefreshCw className="animate-spin" /> Processing...</div>
               )}
             </div>
 
@@ -585,7 +575,6 @@ const Dashboard = () => {
                         <div className="flex justify-between pt-1"><span>GPU</span><span className="truncate w-32 text-right">{gpuRenderer}</span></div>
                     </div>
                 </div>
-
                 <div className={`border-2 p-6 ${darkMode ? 'bg-gray-800 border-white' : 'bg-white border-black'}`}>
                     <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Globe size={18}/> Network Identity</h3>
                     <div className="space-y-2 text-xs font-mono font-bold">
@@ -596,7 +585,6 @@ const Dashboard = () => {
                         <div className="flex justify-between pt-1"><span>Lang</span><span>{language}</span></div>
                     </div>
                 </div>
-                
                 <div className={`border-2 p-6 ${darkMode ? 'bg-gray-800 border-white' : 'bg-white border-black'}`}>
                     <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Fingerprint size={18}/> Fingerprint</h3>
                     <div className="space-y-2 text-xs font-mono font-bold">
@@ -607,7 +595,6 @@ const Dashboard = () => {
                         <div className="flex justify-between pt-1"><span>PDF</span><span>{pdfViewer}</span></div>
                     </div>
                 </div>
-
                 <div className={`border-2 p-6 ${darkMode ? 'bg-gray-800 border-white' : 'bg-white border-black'}`}>
                     <h3 className="font-black uppercase mb-4 flex items-center gap-2"><Shield size={18}/> Sensors</h3>
                     <div className="mb-4">
@@ -624,9 +611,7 @@ const Dashboard = () => {
             </div>
 
             <div className={`p-6 border-2 font-mono text-xs overflow-x-auto ${darkMode ? 'bg-black border-white text-green-400' : 'bg-black text-green-400 border-black'}`}>
-                 <h3 className="font-black uppercase mb-6 text-white text-xl flex items-center gap-3 border-b-2 border-gray-700 pb-4">
-                     <Terminal size={24}/> Deep System Telemetry
-                 </h3>
+                 <h3 className="font-black uppercase mb-6 text-white text-xl flex items-center gap-3 border-b-2 border-gray-700 pb-4"><Terminal size={24}/> Deep System Telemetry</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                      <div>
                          <h4 className="text-white font-bold mb-3 uppercase tracking-wider text-[10px]">Graphics & Media</h4>
@@ -671,29 +656,23 @@ const Dashboard = () => {
           </div>
 
           <div className="flex flex-col gap-6">
-             {/* CONDITIONAL RENDER: EMERGENCY (Pro/Business Only) */}
              {planLevel >= 2 && (
                 <div className={`border-2 p-6 ${darkMode ? 'bg-red-900/20 border-red-500' : 'bg-red-50 border-black'}`}>
                     <h3 className="font-black uppercase text-red-600 text-xl mb-2 flex items-center gap-2"><AlertOctagon /> Emergency</h3>
                     <Button onClick={triggerLockdown} variant="danger" className="w-full py-4 text-lg">TRIGGER LOCKDOWN</Button>
                 </div>
              )}
-
             <div className={`border-2 p-6 ${darkMode ? 'bg-gray-800 border-white' : 'bg-white border-black'}`}>
               <h3 className="font-black uppercase mb-4 flex items-center gap-2"><FileText /> Trap File</h3>
               <Button onClick={downloadHoneyfile} variant="secondary" className="w-full text-xs">Generate Honeyfile</Button>
             </div>
-            
             <div className={`border-2 p-6 ${darkMode ? 'bg-gray-800 border-white' : 'bg-gray-50 border-black'}`}>
               <h3 className="font-black uppercase mb-4 text-sm tracking-widest text-gray-500">Quick Tools</h3>
               <div className="grid grid-cols-2 gap-2">
                   <Button onClick={clearClipboard} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto"><Scissors size={20} className="mb-1"/> Wipe</Button>
-                  
-                  {/* CONDITIONAL: Poison (Pro+) */}
                   {planLevel >= 2 && (
                     <Button onClick={poisonClipboard} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto text-orange-600"><AlertOctagon size={20} className="mb-1"/> Poison</Button>
                   )}
-
                   <Button onClick={toggleFullScreen} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto"><Maximize size={20} className="mb-1"/> Focus</Button>
                   <Button onClick={() => navigate('/tools/file-encrypt')} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto"><Lock size={20} className="mb-1"/> Encrypt</Button>
                   <Button onClick={() => navigate('/tools/ip-lookup')} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto"><Eye size={20} className="mb-1"/> IP Scan</Button>
@@ -703,12 +682,9 @@ const Dashboard = () => {
                   <Button onClick={toggleStealth} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto text-purple-600"><Ghost size={20} className="mb-1"/> Stealth</Button>
                   <Button onClick={toggleWakeLock} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto text-yellow-600"><Anchor size={20} className="mb-1"/> {wakeLockObj ? 'Unlock' : 'WakeLock'}</Button>
                   <Button onClick={pingNetwork} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto text-blue-500"><Pulse size={20} className="mb-1"/> Ping: {latency}</Button>
-                  
-                  {/* CONDITIONAL: MemTest (Business Only) */}
                   {planLevel >= 3 && (
                     <Button onClick={stressMemory} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto text-red-500"><Database size={20} className="mb-1"/> MemTest</Button>
                   )}
-
                   <Button onClick={() => alert(`Compass: ${orientation}`)} variant="secondary" className="text-xs flex flex-col items-center py-4 h-auto text-indigo-500"><Compass size={20} className="mb-1"/> {orientation}</Button>
               </div>
             </div>
@@ -719,7 +695,7 @@ const Dashboard = () => {
   );
 };
 
-const CheckC = () => <span className="text-green-500 font-bold">[ON]</span>;
+const CheckC = () => <span className="text-green-400 font-bold">[ON]</span>;
 const XC = () => <span className="text-red-500 font-bold">[OFF]</span>;
 
 export default Dashboard;

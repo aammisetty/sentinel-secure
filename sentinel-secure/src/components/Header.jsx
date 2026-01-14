@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Shield, Lock, ChevronDown, User, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Menu, X, Shield, Lock, ChevronDown, User, ShieldAlert, ShieldCheck, Globe, Network, Search, FileLock, WifiOff, Fingerprint, Database } from 'lucide-react';
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,7 +10,6 @@ const Header = () => {
   // -- ACCESS CONTROL LOGIC --
   const userPlan = localStorage.getItem('sentinel_plan') || 'free'; 
   const isBlocked = localStorage.getItem('sentinel_blocked') === 'true';
-  // Updated Admin Check to testcodecfg@gmail.com
   const isAdmin = localStorage.getItem('sentinel_admin_email') === 'testcodecfg@gmail.com' && localStorage.getItem('sentinel_admin_2fa') === 'true';
   
   const isLocked = (requiredPlan) => {
@@ -21,10 +20,10 @@ const Header = () => {
   };
 
   // Helper to render links with conditional locking
-  const renderToolLink = (to, label, requiredPlan, isLast = false, isMobile = false) => {
+  const renderToolLink = (to, label, requiredPlan, isLast = false, isMobile = false, Icon = null) => {
     const locked = isLocked(requiredPlan);
     const baseClass = isMobile 
-        ? "text-lg font-bold flex items-center gap-2" 
+        ? "text-lg font-bold flex items-center gap-3" 
         : "p-3 border-b border-gray-200 flex justify-between items-center text-sm";
     
     const finalClass = `${baseClass} ${locked ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'hover:bg-gray-100 hover:text-blue-600'} ${isLast && !isMobile ? 'border-b-0' : ''}`;
@@ -35,30 +34,33 @@ const Header = () => {
             onClick={() => isMobile && setIsOpen(false)}
             className={finalClass}
         >
-            <span>{label}</span>
+            <span className="flex items-center gap-3">
+              {isMobile && Icon && <Icon size={20} className={locked ? 'text-gray-300' : 'text-blue-500'} />}
+              {label}
+            </span>
             {locked && <Lock size={14} className="text-gray-400" />}
         </Link>
     );
   };
 
   return (
-    <header className={`fixed top-0 w-full z-50 border-b-2 border-black h-20 flex items-center justify-between px-6 lg:px-12 transition-colors ${isBlocked ? 'bg-red-600 text-white border-red-800' : 'bg-white'}`}>
+    <header className={`fixed top-0 w-full z-50 border-b-2 border-black h-20 flex items-center justify-between px-6 lg:px-12 transition-colors duration-500 ${isBlocked ? 'bg-red-600 text-white border-red-800' : 'bg-white'}`}>
       
       {/* BRAND / LOGO */}
       <Link to={isBlocked ? "#" : "/"} className="flex items-center gap-2 group z-50">
         <div className={`${isBlocked ? 'bg-white text-red-600' : 'bg-black text-white'} p-1`}>
             {isBlocked ? <ShieldAlert size={24} /> : <Shield size={24} />}
         </div>
-        <h1 className={`text-xl font-black uppercase tracking-tighter ${isBlocked ? 'text-white' : 'group-hover:opacity-70'}`}>
+        <h1 className={`text-xl font-black uppercase tracking-tighter ${isBlocked ? 'text-white' : 'group-hover:opacity-70 text-black'}`}>
           Sentinel <span className={isBlocked ? 'text-white' : 'text-blue-600'}>/</span> Secure
         </h1>
       </Link>
       
-      {/* --- CONDITION 1: BLOCKED USER (ACCESS DENIED) --- */}
+      {/* --- CONDITION: BLOCKED USER NAVIGATION LOCKDOWN --- */}
       {isBlocked ? (
         <div className="flex items-center gap-3 animate-pulse">
             <Lock size={20} />
-            <span className="font-black uppercase tracking-[0.2em] text-sm md:text-lg">Access Denied / Permanent Ban Active</span>
+            <span className="font-black uppercase tracking-[0.2em] text-xs md:text-sm lg:text-lg">Access Denied / hardware ID blacklisted</span>
         </div>
       ) : (
         <>
@@ -71,12 +73,13 @@ const Header = () => {
               <span className="flex items-center gap-1 hover:text-blue-600">Tools <ChevronDown size={14}/></span>
               <div className="absolute top-20 left-0 w-64 bg-white border-2 border-black hidden group-hover:flex flex-col shadow-[4px_4px_0px_0px_#000] text-black">
                  <Link to="/tools/file-encrypt" className="p-3 hover:bg-gray-100 border-b border-gray-200">AES File Vault (New)</Link>
-                 <Link to="/tools/webrtc-leak" className="p-3 hover:bg-gray-100 border-b border-gray-200">WebRTC Leak Check (New)</Link>
+                 <Link to="/tools/webrtc-leak" className="p-3 hover:bg-gray-100 border-b border-gray-200">WebRTC Leak Check</Link>
                  <Link to="/tools/password-gen" className="p-3 hover:bg-gray-100 border-b border-gray-200">Password Gen</Link>
                  <Link to="/tools/browser-check" className="p-3 hover:bg-gray-100 border-b border-gray-200">Browser Fingerprint</Link>
                  <Link to="/tools/ip-lookup" className="p-3 hover:bg-gray-100 border-b border-gray-200">IP Lookup</Link>
-                 <Link to="/tools/speed-test" className="p-3 hover:bg-gray-100 border-b border-gray-200">Speed Test</Link>
-                 <Link to="/tools/secure-notes" className="p-3 hover:bg-gray-100 border-b border-gray-200">Secure Notes</Link>
+                 {renderToolLink("/tools/dns-validator", "DNSSEC/DMARC Validator", "pro")}
+                 {renderToolLink("/tools/pwned-check", "Dark Web Check", "business")}
+                 {renderToolLink("/tools/network-mapper", "Network Topology", "business")}
                  {renderToolLink("/tools/phishing-check", "Phishing Detector", "pro")}
                  {renderToolLink("/tools/incident-log", "Incident Log", "starter", true)}
               </div>
@@ -145,13 +148,14 @@ const Header = () => {
 
               <div className="flex flex-col gap-4 text-black">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Advanced Tools</p>
-                <Link to="/tools/file-encrypt" onClick={() => setIsOpen(false)} className="text-lg font-bold text-green-600">AES File Vault</Link>
-                <Link to="/tools/webrtc-leak" onClick={() => setIsOpen(false)} className="text-lg font-bold text-green-600">WebRTC Leak Check</Link>
-                <Link to="/tools/password-gen" onClick={() => setIsOpen(false)} className="text-lg font-bold">Password Generator</Link>
-                <Link to="/tools/browser-check" onClick={() => setIsOpen(false)} className="text-lg font-bold">Browser Fingerprint</Link>
-                <Link to="/tools/ip-lookup" onClick={() => setIsOpen(false)} className="text-lg font-bold">IP Lookup</Link>
-                {renderToolLink("/tools/phishing-check", "Phishing Check (Pro)", "pro", false, true)}
-                {renderToolLink("/tools/incident-log", "Incident Log (Starter)", "starter", false, true)}
+                <Link to="/tools/file-encrypt" onClick={() => setIsOpen(false)} className="text-lg font-bold text-green-600 flex items-center gap-3"><FileLock size={20}/> AES File Vault</Link>
+                <Link to="/tools/webrtc-leak" onClick={() => setIsOpen(false)} className="text-lg font-bold flex items-center gap-3"><WifiOff size={20}/> WebRTC Leak Check</Link>
+                <Link to="/tools/password-gen" onClick={() => setIsOpen(false)} className="text-lg font-bold flex items-center gap-3"><Fingerprint size={20}/> Password Gen</Link>
+                {renderToolLink("/tools/dns-validator", "DNSSEC Validator", "pro", false, true, Globe)}
+                {renderToolLink("/tools/pwned-check", "Dark Web Check", "business", false, true, Database)}
+                {renderToolLink("/tools/network-mapper", "Subnet Mapper", "business", false, true, Network)}
+                {renderToolLink("/tools/phishing-check", "Phishing Check", "pro", false, true, Search)}
+                {renderToolLink("/tools/incident-log", "Incident Log", "starter", false, true, ShieldAlert)}
               </div>
 
               <div className="flex flex-col gap-4 mt-auto">

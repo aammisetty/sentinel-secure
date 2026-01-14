@@ -47,7 +47,13 @@ const AdminVerify = () => {
   const handleDecision = async (id, txnId, status) => {
     const verdict = status === 'approved' ? 'approved' : 'blocked';
     
+    // Confirmation for blocking to prevent accidental blacklisting
+    if (verdict === 'blocked' && !window.confirm(`PERMANENTLY BLOCK TRANSACTION ${txnId}? This triggers a site-wide Access Denied screen for the user.`)) {
+        return;
+    }
+
     try {
+      // Pushing the block status to Supabase for real-time global interception
       const { error } = await supabase
         .from('payment_requests')
         .update({ status: verdict })
@@ -165,7 +171,7 @@ const AdminVerify = () => {
                         onClick={() => handleDecision(req.id, req.txn_id, 'blocked')}
                         className="flex-1 xl:flex-none bg-red-600 text-white px-8 py-3 font-bold uppercase text-xs border-2 border-black hover:bg-red-700 flex items-center justify-center gap-2"
                       >
-                        <XCircle size={16}/> Deny
+                        <XCircle size={16}/> Deny & Block
                       </button>
                     </div>
                   )}
@@ -189,8 +195,8 @@ const AdminVerify = () => {
              <Hash size={12}/> Live Database Context
            </div>
            LOG: [REALTIME] Postgres broadcast listening for 'public.payment_requests' <br/>
-           LOG: [FILTER] Displaying {filteredRequests.length} records matching status '{activeTab}' <br/>
-           LOG: [SECURITY] All decisions recorded with founder timestamp.
+           LOG: [SECURITY] All decisions recorded with proprietor timestamp. <br/>
+           LOG: [BLOCK] Deny actions push immediate 'status: blocked' to Supabase.
         </div>
       </div>
     </div>

@@ -49,9 +49,11 @@ const Footer = () => (
         <ul className="space-y-3 font-bold">
           <li><Link to="/dashboard" className="text-red-500 hover:text-white hover:pl-2 transition-all">Dashboard Portal</Link></li>
           <li><Link to="/tools/file-encrypt" className="hover:text-blue-500 hover:pl-2 transition-all">AES File Vault</Link></li>
-          <li><Link to="/tools/webrtc-leak" className="hover:text-blue-500 hover:pl-2 transition-all">WebRTC Leak Check</Link></li>
+          <li><Link to="/tools/pwned-check" className="hover:text-blue-500 hover:pl-2 transition-all">Dark Web Check</Link></li>
+          <li><Link to="/tools/network-mapper" className="hover:text-blue-500 hover:pl-2 transition-all">Subnet Mapper</Link></li>
+          <li><Link to="/tools/dns-validator" className="hover:text-blue-500 hover:pl-2 transition-all">DNSSEC Validator</Link></li>
           <li><Link to="/tools/phishing-check" className="hover:text-blue-500 hover:pl-2 transition-all">Phishing Detector</Link></li>
-          <li><Link to="/tools/ip-lookup" className="hover:text-blue-500 hover:pl-2 transition-all">IP Lookup</Link></li>
+          <li><Link to="/tools/webrtc-leak" className="hover:text-blue-500 hover:pl-2 transition-all">WebRTC Leak Check</Link></li>
           <li><Link to="/tools/password-gen" className="hover:text-blue-500 hover:pl-2 transition-all">Password Generator</Link></li>
         </ul>
       </div>
