@@ -7,8 +7,8 @@ import {
 import Button from '../components/Button';
 
 // Import your QR images here (Ensure files are in src/assets/)
-import phonePeQR from '../assets/p1.png'; 
-import whatsAppQR from '../assets/p2.png';
+import phonePeQR from '../assets/p2.png'; 
+import whatsAppQR from '../assets/p1.png';
 
 const Payment = () => {
   const { state } = useLocation();
