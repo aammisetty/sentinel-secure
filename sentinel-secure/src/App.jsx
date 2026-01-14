@@ -9,7 +9,8 @@ import Dashboard from './pages/Dashboard';
 import Contact from './pages/Contact';
 import About from './pages/About';
 import Services from './pages/Services';
-import Pricing from './pages/Pricing';   // NEW
+import Pricing from './pages/Pricing';   
+import Payment from './pages/Payment';   // NEW
 import FAQ from './pages/FAQ';
 import Resources from './pages/Resources';
 import Careers from './pages/Careers';
@@ -62,7 +63,8 @@ function App() {
             
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
-            <Route path="/pricing" element={<Pricing />} /> {/* NEW ROUTE */}
+            <Route path="/pricing" element={<Pricing />} /> 
+            <Route path="/payment" element={<Payment />} /> {/* NEW ROUTE */}
             <Route path="/faq" element={<FAQ />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/careers" element={<Careers />} />

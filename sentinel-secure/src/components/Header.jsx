@@ -19,7 +19,7 @@ const Header = () => {
       </Link>
       
       {/* DESKTOP */}
-      <div className="hidden lg:flex gap-8 font-bold text-sm uppercase tracking-widest items-center">
+      <div className="hidden lg:flex gap-6 font-bold text-sm uppercase tracking-widest items-center">
         <Link to="/" className={`hover:text-blue-600 ${isActive('/')}`}>Home</Link>
         
         {/* TOOLS DROPDOWN */}
@@ -42,14 +42,27 @@ const Header = () => {
         <div className="relative group cursor-pointer h-20 flex items-center">
           <span className="flex items-center gap-1 hover:text-blue-600">Company <ChevronDown size={14}/></span>
           <div className="absolute top-20 left-0 w-48 bg-white border-2 border-black hidden group-hover:flex flex-col shadow-[4px_4px_0px_0px_#000]">
-             <Link to="/services" className="p-3 hover:bg-gray-100 border-b border-gray-200">Services</Link>
              <Link to="/about" className="p-3 hover:bg-gray-100 border-b border-gray-200">About Us</Link>
-             <Link to="/audit" className="p-3 hover:bg-gray-100 border-b border-gray-200">Audit Report</Link>
+             <Link to="/services" className="p-3 hover:bg-gray-100 border-b border-gray-200">Services</Link>
+             <Link to="/partners" className="p-3 hover:bg-gray-100 border-b border-gray-200">Partners</Link>
              <Link to="/careers" className="p-3 hover:bg-gray-100 border-b border-gray-200">Careers</Link>
+             <Link to="/press" className="p-3 hover:bg-gray-100">Media Kit</Link>
+          </div>
+        </div>
+
+        {/* RESOURCES DROPDOWN (NEW) */}
+        <div className="relative group cursor-pointer h-20 flex items-center">
+          <span className="flex items-center gap-1 hover:text-blue-600">Resources <ChevronDown size={14}/></span>
+          <div className="absolute top-20 left-0 w-56 bg-white border-2 border-black hidden group-hover:flex flex-col shadow-[4px_4px_0px_0px_#000]">
+             <Link to="/audit" className="p-3 hover:bg-gray-100 border-b border-gray-200">Audit Report</Link>
+             <Link to="/status" className="p-3 hover:bg-gray-100 border-b border-gray-200">System Status</Link>
+             <Link to="/security" className="p-3 hover:bg-gray-100 border-b border-gray-200">Trust Center</Link>
+             <Link to="/sitemap" className="p-3 hover:bg-gray-100 border-b border-gray-200">Global Sitemap</Link>
              <Link to="/faq" className="p-3 hover:bg-gray-100">FAQ</Link>
           </div>
         </div>
 
+        <Link to="/pricing" className={`hover:text-blue-600 ${isActive('/pricing')}`}>Pricing</Link>
         <Link to="/contact" className={`hover:text-blue-600 ${isActive('/contact')}`}>Contact</Link>
 
         {/* User Actions */}
@@ -74,9 +87,24 @@ const Header = () => {
           <div className="flex flex-col gap-4">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Main</p>
             <Link to="/" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Home</Link>
+            <Link to="/pricing" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Pricing</Link>
             <Link to="/audit" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Audit Report</Link>
-            <Link to="/settings" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Settings</Link>
+            <Link to="/partners" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase hover:text-blue-600">Partner Program</Link>
             <Link to="/dashboard" onClick={() => setIsOpen(false)} className="text-2xl font-black uppercase text-red-600 flex items-center gap-2"><Lock size={20}/> Portal Login</Link>
+          </div>
+
+          <div className="h-px bg-gray-200"></div>
+
+          <div className="flex flex-col gap-4">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Company & Resources</p>
+            <div className="grid grid-cols-2 gap-4">
+                <Link to="/about" onClick={() => setIsOpen(false)} className="text-sm font-bold hover:text-blue-600">About Us</Link>
+                <Link to="/status" onClick={() => setIsOpen(false)} className="text-sm font-bold hover:text-blue-600">System Status</Link>
+                <Link to="/security" onClick={() => setIsOpen(false)} className="text-sm font-bold hover:text-blue-600">Trust Center</Link>
+                <Link to="/press" onClick={() => setIsOpen(false)} className="text-sm font-bold hover:text-blue-600">Media Kit</Link>
+                <Link to="/careers" onClick={() => setIsOpen(false)} className="text-sm font-bold hover:text-blue-600">Careers</Link>
+                <Link to="/sitemap" onClick={() => setIsOpen(false)} className="text-sm font-bold hover:text-blue-600">Sitemap</Link>
+            </div>
           </div>
 
           <div className="h-px bg-gray-200"></div>
